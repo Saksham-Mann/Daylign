@@ -3,6 +3,7 @@
 .env.local
 .env.*.local
 *.env
+public/js/env.js
 service-account*.json
 firebase-debug.log*
 firestore-debug.log*
