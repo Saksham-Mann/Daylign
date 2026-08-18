@@ -17,17 +17,20 @@ import {
 } from "firebase/auth";
 
 /**
- * Default Firebase Configuration.
- * Note: Replace these placeholder credentials with your Firebase project config
- * from the Firebase Console (Project Settings > General > Your Apps).
+ * Dynamic Firebase Configuration.
+ * Loads from window.__FIREBASE_CONFIG__ (injected via .env / env.js)
+ * or falls back to standard environment parameters.
  */
+const envConfig = window.__FIREBASE_CONFIG__ || {};
+
 export const firebaseConfig = {
-  apiKey: window.__FIREBASE_API_KEY__ || "AIzaSyDaylignDefaultDevKeyReplaceMe12345",
-  authDomain: window.__FIREBASE_AUTH_DOMAIN__ || "daylign-app.firebaseapp.com",
-  projectId: window.__FIREBASE_PROJECT_ID__ || "daylign-app",
-  storageBucket: window.__FIREBASE_STORAGE_BUCKET__ || "daylign-app.appspot.com",
-  messagingSenderId: window.__FIREBASE_MESSAGING_SENDER_ID__ || "123456789012",
-  appId: window.__FIREBASE_APP_ID__ || "1:123456789012:web:abcdef1234567890"
+  apiKey: envConfig.apiKey || window.__FIREBASE_API_KEY__ || "YOUR_FIREBASE_API_KEY",
+  authDomain: envConfig.authDomain || window.__FIREBASE_AUTH_DOMAIN__ || "daylign-22030.firebaseapp.com",
+  projectId: envConfig.projectId || window.__FIREBASE_PROJECT_ID__ || "daylign-22030",
+  storageBucket: envConfig.storageBucket || window.__FIREBASE_STORAGE_BUCKET__ || "daylign-22030.firebasestorage.app",
+  messagingSenderId: envConfig.messagingSenderId || window.__FIREBASE_MESSAGING_SENDER_ID__ || "1026732202958",
+  appId: envConfig.appId || window.__FIREBASE_APP_ID__ || "1:1026732202958:web:504ca8ba6a15e7ce07a99f",
+  measurementId: envConfig.measurementId || window.__FIREBASE_MEASUREMENT_ID__ || ""
 };
 
 /**
