@@ -1,12 +1,12 @@
 /**
  * @file chartManager.js
  * @description Chart.js visualization and analytics manager for Daylign.
- * Aggregates historical timeLogs client-side into 7-day and 30-day buckets,
- * renders completion-rate and time-spent charts with pastel palettes,
+ * Consumes pre-aggregated analytics from the serverless backend (/api/analytics),
+ * renders dual-axis completion-rate and time-spent charts with pastel palettes,
  * and manages instance lifecycles to prevent memory leaks.
  */
 
-import { getTimeLogsForChecklist, getLocalDateString } from "./db.js";
+import { fetchAnalyticsData } from "./apiClient.js";
 
 /**
  * Active Chart.js instance reference
@@ -15,66 +15,16 @@ import { getTimeLogsForChecklist, getLocalDateString } from "./db.js";
 let activeChartInstance = null;
 
 /**
- * Fetch and aggregate timeLogs for a given checklist across a date range.
+ * Fetch pre-aggregated analytics for a given checklist across a date range from the backend.
  * 
  * @param {string} uid - User ID
  * @param {string} checklistId - Target checklist ID
- * @param {number} [days=7] - Number of days to look back (e.g. 7 or 30)
- * @returns {Promise<{ dayLabels: string[], dateKeys: string[], completionData: number[], durationMinutesData: number[], totalCompletions: number, activeDays: number, totalMinutes: number, avgRate: number }>}
+ * @param {number} [days=7] - Number of days to look back (7 or 30)
+ * @returns {Promise<Object>}
  */
 export async function getTimeLogsForRange(uid, checklistId, days = 7) {
   const safeDays = Math.max(1, Number(days) || 7);
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() - (safeDays - 1));
-  const startDateStr = getLocalDateString(startDate);
-
-  const logs = await getTimeLogsForChecklist(uid, checklistId, startDateStr);
-
-  const dayLabels = [];
-  const dateKeys = [];
-  const countsByDate = {};
-  const durationsByDate = {};
-
-  for (let i = 0; i < safeDays; i++) {
-    const d = new Date(startDate);
-    d.setDate(d.getDate() + i);
-    const key = getLocalDateString(d);
-    dateKeys.push(key);
-    countsByDate[key] = 0;
-    durationsByDate[key] = 0;
-
-    const label = safeDays <= 7
-      ? d.toLocaleDateString("en-US", { weekday: "short" })
-      : d.toLocaleDateString("en-US", { month: "numeric", day: "numeric" });
-    dayLabels.push(label);
-  }
-
-  logs.forEach((log) => {
-    if (countsByDate[log.date] !== undefined) {
-      countsByDate[log.date] += 1;
-      const durationSeconds = Number(log.durationSeconds) || 0;
-      durationsByDate[log.date] += Math.round(durationSeconds / 60);
-    }
-  });
-
-  const completionData = dateKeys.map((k) => countsByDate[k]);
-  const durationMinutesData = dateKeys.map((k) => durationsByDate[k]);
-
-  const totalCompletions = completionData.reduce((a, b) => a + b, 0);
-  const activeDays = completionData.filter((c) => c > 0).length;
-  const totalMinutes = durationMinutesData.reduce((a, b) => a + b, 0);
-  const avgRate = Math.round((activeDays / safeDays) * 100);
-
-  return {
-    dayLabels,
-    dateKeys,
-    completionData,
-    durationMinutesData,
-    totalCompletions,
-    activeDays,
-    totalMinutes,
-    avgRate
-  };
+  return await fetchAnalyticsData(checklistId, safeDays);
 }
 
 /**
@@ -120,12 +70,12 @@ export async function renderAnalyticsChart(canvas, uid, checklistId, options = {
   try {
     const data = await getTimeLogsForRange(uid, checklistId, days);
 
-    if (typeof options.onStatsUpdated === "function") {
+    if (typeof options.onStatsUpdated === "function" && data?.summary) {
       options.onStatsUpdated({
-        avgRate: data.avgRate,
-        activeDays: data.activeDays,
+        avgRate: data.summary.avgRate || 0,
+        activeDays: data.summary.activeDays || 0,
         totalDays: days,
-        totalMinutes: data.totalMinutes
+        totalMinutes: data.summary.totalMinutes || 0
       });
     }
 
@@ -133,7 +83,7 @@ export async function renderAnalyticsChart(canvas, uid, checklistId, options = {
       {
         type: "bar",
         label: "Tasks Completed",
-        data: data.completionData,
+        data: data.completedCounts || [],
         backgroundColor: accentColor + "80", // 50% opacity
         borderColor: accentColor,
         borderWidth: 1.5,
@@ -148,7 +98,7 @@ export async function renderAnalyticsChart(canvas, uid, checklistId, options = {
       datasets.push({
         type: "line",
         label: "Time Spent (min)",
-        data: data.durationMinutesData,
+        data: data.durationsMinutes || [],
         borderColor: "#34D399",
         backgroundColor: "rgba(52, 211, 153, 0.15)",
         fill: true,
@@ -165,7 +115,7 @@ export async function renderAnalyticsChart(canvas, uid, checklistId, options = {
 
     activeChartInstance = new window.Chart(canvas, {
       data: {
-        labels: data.dayLabels,
+        labels: data.labels || [],
         datasets
       },
       options: {

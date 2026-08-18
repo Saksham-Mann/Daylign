@@ -2,15 +2,10 @@
  * @file timer.js
  * @description Timer & Stopwatch Engine for Daylign.
  * Manages live stopwatch ticking, duration calculations, start/stop accumulation,
- * auto-stopping on task completion or settings toggles, and accessible screen-reader announcements.
+ * auto-stopping on task completion, and accessible screen-reader announcements.
  */
 
-import {
-  startTaskTimer,
-  stopTaskTimer,
-  completeTask,
-  stopAllRunningTimersInChecklist
-} from "./db.js";
+import { updateTask, completeTask } from "./db.js";
 
 /* ==========================================================================
    ACTIVE LIVE TICKER STORE
@@ -42,36 +37,35 @@ export function formatDuration(totalSeconds) {
 /**
  * Calculate the total accumulated seconds including live delta since startedAt.
  * 
- * @param {number|Date|import('firebase/firestore').Timestamp} startedAt 
+ * @param {number|Date|string} startedAt 
  * @param {number} [baseAccumulatedSeconds=0] 
  * @returns {number} Current total seconds
  */
 export function calculateCurrentElapsed(startedAt, baseAccumulatedSeconds = 0) {
   if (!startedAt) return baseAccumulatedSeconds;
-  const startMs = startedAt.toDate
+  const startMs = startedAt?.toDate
     ? startedAt.toDate().getTime()
-    : (startedAt instanceof Date ? startedAt.getTime() : Number(startedAt) || Date.now());
+    : (startedAt instanceof Date ? startedAt.getTime() : Number(new Date(startedAt)) || Date.now());
   const liveDelta = Math.max(0, Math.floor((Date.now() - startMs) / 1000));
   return baseAccumulatedSeconds + liveDelta;
 }
 
 /**
  * Start a live ticking loop for a task's stopwatch display.
- * Uses setInterval (~1s tick) for smooth second updates without unnecessary layout thrashing.
+ * Uses setInterval (~1s tick) for smooth second updates.
  * 
  * @param {string} taskId - Unique task ID
- * @param {number|Date|import('firebase/firestore').Timestamp} startedAt - Timestamp when timer started
+ * @param {number|Date|string} startedAt - Timestamp when timer started
  * @param {number} baseAccumulatedSeconds - Previously accumulated seconds
  * @param {(formatted: string, totalSeconds: number) => void} onTick - Callback executed on each tick
  * @returns {() => void} Unsubscribe/stop ticker function
  */
 export function createLiveTicker(taskId, startedAt, baseAccumulatedSeconds, onTick) {
-  // Clear any existing ticker for this task
   clearLiveTicker(taskId);
 
-  const startMs = startedAt.toDate
+  const startMs = startedAt?.toDate
     ? startedAt.toDate().getTime()
-    : (startedAt instanceof Date ? startedAt.getTime() : Number(startedAt) || Date.now());
+    : (startedAt instanceof Date ? startedAt.getTime() : Number(new Date(startedAt)) || Date.now());
 
   const tick = () => {
     const liveDelta = Math.max(0, Math.floor((Date.now() - startMs) / 1000));
@@ -81,10 +75,7 @@ export function createLiveTicker(taskId, startedAt, baseAccumulatedSeconds, onTi
     }
   };
 
-  // Immediate first tick
   tick();
-
-  // Setup interval (~1s tick)
   const intervalId = window.setInterval(tick, 1000);
   activeTickers.set(taskId, intervalId);
 
@@ -112,11 +103,11 @@ export function clearAllLiveTickers() {
 }
 
 /* ==========================================================================
-   STOPWATCH STATE TRANSITIONS & FIRESTORE CALLS
+   STOPWATCH STATE TRANSITIONS & API CALLS
    ========================================================================== */
 
 /**
- * Start a task's stopwatch timer in Firestore.
+ * Start a task's stopwatch timer on the backend.
  * 
  * @param {string} uid - User ID
  * @param {string} checklistId - Checklist ID
@@ -125,7 +116,9 @@ export function clearAllLiveTickers() {
  */
 export async function startTimer(uid, checklistId, taskId) {
   try {
-    await startTaskTimer(uid, checklistId, taskId);
+    await updateTask(uid, checklistId, taskId, {
+      startedAt: true
+    });
   } catch (error) {
     console.error(`[Timer] Failed to start timer for task ${taskId}:`, error);
     throw error;
@@ -133,12 +126,12 @@ export async function startTimer(uid, checklistId, taskId) {
 }
 
 /**
- * Stop/Pause a task's stopwatch timer, calculating the live elapsed delta and persisting to Firestore.
+ * Stop/Pause a task's stopwatch timer, calculating the live elapsed delta and persisting.
  * 
  * @param {string} uid - User ID
  * @param {string} checklistId - Checklist ID
  * @param {string} taskId - Task ID
- * @param {number|Date|import('firebase/firestore').Timestamp} [startedAt] - Task's startedAt timestamp
+ * @param {number|Date|string} [startedAt] - Task's startedAt timestamp
  * @param {string} [taskTitle=""] - Optional task title for accessibility announcement
  * @returns {Promise<number>} New total accumulated seconds
  */
@@ -147,14 +140,19 @@ export async function stopTimer(uid, checklistId, taskId, startedAt, taskTitle =
 
   let elapsedDelta = 0;
   if (startedAt) {
-    const startMs = startedAt.toDate
+    const startMs = startedAt?.toDate
       ? startedAt.toDate().getTime()
-      : (startedAt instanceof Date ? startedAt.getTime() : Number(startedAt) || Date.now());
+      : (startedAt instanceof Date ? startedAt.getTime() : Number(new Date(startedAt)) || Date.now());
     elapsedDelta = Math.max(0, Math.floor((Date.now() - startMs) / 1000));
   }
 
   try {
-    const newTotal = await stopTaskTimer(uid, checklistId, taskId, elapsedDelta);
+    const res = await updateTask(uid, checklistId, taskId, {
+      startedAt: null,
+      timeSpentSeconds: elapsedDelta
+    });
+
+    const newTotal = res?.timeSpentSeconds || elapsedDelta;
 
     // Announce to screen readers on stop only (Design.md §2.3)
     announceTimerStop(taskTitle, formatDuration(newTotal));
@@ -168,8 +166,8 @@ export async function stopTimer(uid, checklistId, taskId, startedAt, taskTitle =
 
 /**
  * Complete a task with timer integration:
- * If the timer is actively running, compute elapsed time delta, stop the timer,
- * stamp completion, increment counters, and write append-only record to timeLogs.
+ * Sends completion request to the serverless backend, which computes duration,
+ * auto-stops timer, stamps completion, increments counters, and writes immutable timeLog.
  * 
  * @param {string} uid - User ID
  * @param {string} checklistId - Checklist ID
@@ -177,50 +175,24 @@ export async function stopTimer(uid, checklistId, taskId, startedAt, taskTitle =
  * @param {Object} options
  * @param {boolean} [options.timerEnabled=false] - Whether timer is enabled on checklist
  * @param {string} [options.categoryId=""] - Category foreign key
- * @param {number|Date|import('firebase/firestore').Timestamp} [options.startedAt=null] - If timer was running
+ * @param {number|Date|string} [options.startedAt=null] - If timer was running
  * @param {string} [options.taskTitle=""] - Title for announcement
  * @returns {Promise<void>}
  */
 export async function completeTaskWithTimer(uid, checklistId, taskId, options = {}) {
   clearLiveTicker(taskId);
 
-  let activeElapsedSeconds = 0;
-  if (options.startedAt) {
-    const startMs = options.startedAt.toDate
-      ? options.startedAt.toDate().getTime()
-      : (options.startedAt instanceof Date ? options.startedAt.getTime() : Number(options.startedAt) || Date.now());
-    activeElapsedSeconds = Math.max(0, Math.floor((Date.now() - startMs) / 1000));
-  }
-
   try {
-    await completeTask(uid, checklistId, taskId, {
+    const result = await completeTask(uid, checklistId, taskId, {
       timerEnabled: options.timerEnabled !== false,
-      categoryId: options.categoryId || "",
-      activeElapsedSeconds
+      categoryId: options.categoryId || ""
     });
 
-    if (options.taskTitle && options.timerEnabled) {
-      announceTimerStop(options.taskTitle, formatDuration(activeElapsedSeconds));
+    if (options.taskTitle && options.timerEnabled && result?.totalDurationSeconds) {
+      announceTimerStop(options.taskTitle, formatDuration(result.totalDurationSeconds));
     }
   } catch (error) {
     console.error(`[Timer] Failed to complete task ${taskId}:`, error);
-    throw error;
-  }
-}
-
-/**
- * Auto-stop all active timers in a checklist (e.g. when timerEnabled is toggled off)
- * 
- * @param {string} uid - User ID
- * @param {string} checklistId - Checklist ID
- * @returns {Promise<void>}
- */
-export async function stopAllTimersForChecklist(uid, checklistId) {
-  clearAllLiveTickers();
-  try {
-    await stopAllRunningTimersInChecklist(uid, checklistId);
-  } catch (error) {
-    console.error(`[Timer] Failed to auto-stop timers for checklist ${checklistId}:`, error);
     throw error;
   }
 }
@@ -261,6 +233,5 @@ export default {
   startTimer,
   stopTimer,
   completeTaskWithTimer,
-  stopAllTimersForChecklist,
   announceTimerStop
 };
