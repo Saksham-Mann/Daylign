@@ -2,22 +2,20 @@
  * @file resetEngine.js
  * @description Daily Midnight Reset Engine Trigger for Daylign.
  * Invoked on app boot (post-auth) and on document visibilitychange.
- * Dispatches reset evaluation to the backend API (/api/engine/reset),
- * which performs transactional reset with multi-tab race protection.
+ * Evaluates and executes the transaction-guarded daily reset across all daily checklists.
  */
 
-import { triggerDailyReset } from "./apiClient.js";
+import { runDailyResetCheck } from "./db.js";
 
 /**
  * Scan all daily-reset checklists for a user and trigger daily midnight resets.
- * Invoked on app boot (post-auth) and on document visibilitychange.
  * 
  * @param {string} [uid] - User ID
  * @returns {Promise<Object>}
  */
 export async function runResetEngine(uid) {
   try {
-    const result = await triggerDailyReset();
+    const result = await runDailyResetCheck(uid);
     if (result?.resetCount > 0) {
       console.info(`[ResetEngine] Midnight reset completed for ${result.resetCount} checklist(s).`);
     }

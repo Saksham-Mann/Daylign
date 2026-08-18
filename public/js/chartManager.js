@@ -6,26 +6,13 @@
  * and manages instance lifecycles to prevent memory leaks.
  */
 
-import { fetchAnalyticsData } from "./apiClient.js";
+import { getTimeLogsForRange } from "./db.js";
 
 /**
  * Active Chart.js instance reference
  * @type {import('chart.js').Chart | null}
  */
 let activeChartInstance = null;
-
-/**
- * Fetch pre-aggregated analytics for a given checklist across a date range from the backend.
- * 
- * @param {string} uid - User ID
- * @param {string} checklistId - Target checklist ID
- * @param {number} [days=7] - Number of days to look back (7 or 30)
- * @returns {Promise<Object>}
- */
-export async function getTimeLogsForRange(uid, checklistId, days = 7) {
-  const safeDays = Math.max(1, Number(days) || 7);
-  return await fetchAnalyticsData(checklistId, safeDays);
-}
 
 /**
  * Destroy the current Chart.js instance to prevent memory leaks (Rules.md §4 & TechSpec.md §2).
