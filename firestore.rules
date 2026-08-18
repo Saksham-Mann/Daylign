@@ -1,0 +1,50 @@
+rules_version = '2';
+
+/**
+ * Firestore Security Rules for Daylign Activity & Habit Tracker
+ * Enforces per-user data isolation (UID ownership) and append-only
+ * immutability for the timeLogs collection to protect historical analytics.
+ */
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * Helper function to verify that the request is authenticated
+     * and the authenticated user's UID matches the path UID.
+     */
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    // All application data is strictly partitioned under /users/{uid}
+    match /users/{uid} {
+      // Allow read/write to the user root doc itself
+      allow read, write: if isOwner(uid);
+
+      // Categories collection: full CRUD by owner
+      match /categories/{categoryId} {
+        allow read, write: if isOwner(uid);
+      }
+
+      // Checklists collection: full CRUD by owner
+      match /checklists/{checklistId} {
+        allow read, write: if isOwner(uid);
+
+        // Tasks subcollection: full CRUD by owner
+        match /tasks/{taskId} {
+          allow read, write: if isOwner(uid);
+        }
+      }
+
+      // TimeLogs collection: append-only source of truth for analytics
+      match /timeLogs/{timeLogId} {
+        // Allow owner to read their historical logs and create new entries
+        allow read, create: if isOwner(uid);
+        // Explicitly disallow update and delete to preserve audit trail integrity
+        allow update, delete: if false;
+      }
+    }
+
+    // Implicit deny for all other top-level paths
+  }
+}
