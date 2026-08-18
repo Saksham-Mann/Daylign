@@ -89,6 +89,23 @@ export function getCurrentUser() {
 }
 
 /**
+ * Retrieve the current user's Firebase Auth JWT ID Token for backend API calls.
+ * 
+ * @param {boolean} [forceRefresh=false]
+ * @returns {Promise<string|null>}
+ */
+export async function getIdToken(forceRefresh = false) {
+  const user = getCurrentUser();
+  if (!user) return null;
+  try {
+    return await user.getIdToken(forceRefresh);
+  } catch (error) {
+    console.warn("[Auth] Error fetching ID token:", error.message);
+    return null;
+  }
+}
+
+/**
  * Get current user UID safely
  * @returns {string | null}
  */
