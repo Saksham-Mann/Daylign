@@ -7,15 +7,18 @@
     "node": ">=18"
   },
   "scripts": {
+    "lint": "npx eslint index.js --no-eslintrc --rule '{\"no-undef\": \"error\", \"no-unused-vars\": \"warn\"}'",
     "serve": "firebase emulators:start --only functions",
     "shell": "firebase functions:shell",
     "start": "npm run shell",
     "deploy": "firebase deploy --only functions",
+    "predeploy": "npm run lint",
     "logs": "firebase functions:log"
   },
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.19.2",
+    "express-rate-limit": "^8.6.2",
     "firebase-admin": "^12.0.0",
     "firebase-functions": "^5.0.0"
   },

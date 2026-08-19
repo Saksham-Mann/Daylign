@@ -9,6 +9,7 @@ const { onRequest } = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
 const express = require("express");
 const cors = require("cors");
+const rateLimit = require("express-rate-limit");
 
 // Initialize Firebase Admin SDK singleton
 if (!admin.apps.length) {
@@ -18,9 +19,24 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 const app = express();
 
-// Apply Global Middleware
-app.use(cors({ origin: true }));
+// Apply Global Middleware — restrict CORS to known origins (HIGH-03)
+const ALLOWED_ORIGINS = [
+  "https://daylign-22030.web.app",
+  "https://daylign-22030.firebaseapp.com",
+  "http://localhost:5000",
+  "http://localhost:4000"
+];
+app.use(cors({ origin: ALLOWED_ORIGINS }));
 app.use(express.json());
+
+// Rate limiting: max 100 requests per minute per IP (MEDIUM-03)
+app.use(rateLimit({
+  windowMs: 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too Many Requests", message: "Rate limit exceeded. Please try again later." }
+}));
 
 /* ==========================================================================
    AUTHENTICATION MIDDLEWARE
@@ -161,8 +177,19 @@ app.patch("/api/categories/:id", async (req, res) => {
     const updates = {
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     };
-    if (name !== undefined) updates.name = String(name).trim();
-    if (colorToken !== undefined) updates.colorToken = colorToken;
+    if (name !== undefined) {
+      const trimmed = String(name).trim();
+      if (!trimmed || trimmed.length > 50) {
+        return res.status(400).json({ error: "Validation Error", message: "Category name must be 1-50 characters." });
+      }
+      updates.name = trimmed;
+    }
+    if (colorToken !== undefined) {
+      if (!["lavender", "mint", "peach", "butter"].includes(colorToken)) {
+        return res.status(400).json({ error: "Validation Error", message: "Invalid color token." });
+      }
+      updates.colorToken = colorToken;
+    }
     if (icon !== undefined) updates.icon = icon;
     if (order !== undefined) updates.order = Number(order);
 
@@ -195,20 +222,29 @@ app.delete("/api/categories/:id", async (req, res) => {
       .where("categoryId", "==", id)
       .get();
 
-    const batch = db.batch();
+    // Collect all document refs to delete for chunked batch processing (MEDIUM-01)
+    const deleteRefs = [];
 
     // Cascade delete subcollection tasks and checklist docs
     for (const checkDoc of checklistsSnap.docs) {
       const tasksSnap = await checkDoc.ref.collection("tasks").get();
       tasksSnap.forEach((taskDoc) => {
-        batch.delete(taskDoc.ref);
+        deleteRefs.push(taskDoc.ref);
       });
-      batch.delete(checkDoc.ref);
+      deleteRefs.push(checkDoc.ref);
     }
 
     // Delete category doc
-    batch.delete(catRef);
-    await batch.commit();
+    deleteRefs.push(catRef);
+
+    // Commit in chunks of 499 to stay under Firestore's 500-operation batch limit
+    const BATCH_LIMIT = 499;
+    for (let i = 0; i < deleteRefs.length; i += BATCH_LIMIT) {
+      const chunk = deleteRefs.slice(i, i + BATCH_LIMIT);
+      const batch = db.batch();
+      chunk.forEach((ref) => batch.delete(ref));
+      await batch.commit();
+    }
 
     return res.json({ success: true, message: `Category ${id} and all child checklists deleted.` });
   } catch (error) {
@@ -386,7 +422,13 @@ app.patch("/api/checklists/:id", async (req, res) => {
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     };
 
-    if (name !== undefined) updates.name = String(name).trim();
+    if (name !== undefined) {
+      const trimmed = String(name).trim();
+      if (!trimmed || trimmed.length > 60) {
+        return res.status(400).json({ error: "Validation Error", message: "Checklist name must be 1-60 characters." });
+      }
+      updates.name = trimmed;
+    }
     if (order !== undefined) updates.order = Number(order);
 
     if (settings) {
@@ -566,7 +608,13 @@ app.patch("/api/checklists/:id/tasks/:taskId", async (req, res) => {
     const currentTask = taskSnap.data();
     const updates = {};
 
-    if (title !== undefined) updates.title = String(title).trim();
+    if (title !== undefined) {
+      const trimmed = String(title).trim();
+      if (!trimmed || trimmed.length > 120) {
+        return res.status(400).json({ error: "Validation Error", message: "Task title must be 1-120 characters." });
+      }
+      updates.title = trimmed;
+    }
     if (order !== undefined) updates.order = Number(order);
 
     if (startedAt !== undefined) {
@@ -956,4 +1004,4 @@ app.post("/api/engine/reset", async (req, res) => {
 });
 
 // Export Cloud Function "api"
-exports.api = onRequest({ cors: true, maxInstances: 10 }, app);
+exports.api = onRequest({ cors: ALLOWED_ORIGINS, maxInstances: 10 }, app);
