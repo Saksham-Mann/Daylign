@@ -135,7 +135,7 @@ export async function startTimer(uid, checklistId, taskId) {
  * @param {string} [taskTitle=""] - Optional task title for accessibility announcement
  * @returns {Promise<number>} New total accumulated seconds
  */
-export async function stopTimer(uid, checklistId, taskId, startedAt, taskTitle = "") {
+export async function stopTimer(uid, checklistId, taskId, startedAt, baseAccumulatedSeconds = 0, taskTitle = "") {
   clearLiveTicker(taskId);
 
   let elapsedDelta = 0;
@@ -146,18 +146,20 @@ export async function stopTimer(uid, checklistId, taskId, startedAt, taskTitle =
     elapsedDelta = Math.max(0, Math.floor((Date.now() - startMs) / 1000));
   }
 
+  const newTotal = (Number(baseAccumulatedSeconds) || 0) + elapsedDelta;
+
   try {
     const res = await updateTask(uid, checklistId, taskId, {
       startedAt: null,
-      timeSpentSeconds: elapsedDelta
+      timeSpentSeconds: newTotal
     });
 
-    const newTotal = res?.timeSpentSeconds || elapsedDelta;
+    const finalTotal = res?.timeSpentSeconds || newTotal;
 
     // Announce to screen readers on stop only (Design.md §2.3)
-    announceTimerStop(taskTitle, formatDuration(newTotal));
+    announceTimerStop(taskTitle, formatDuration(finalTotal));
 
-    return newTotal;
+    return finalTotal;
   } catch (error) {
     console.error(`[Timer] Failed to stop timer for task ${taskId}:`, error);
     throw error;

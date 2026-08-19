@@ -497,7 +497,7 @@ function renderTasksList(container, uid, checklistId, tasks, options = {}) {
       if (!task) return;
 
       try {
-        await stopTimer(uid, checklistId, taskId, task.startedAt, task.title);
+        await stopTimer(uid, checklistId, taskId, task.startedAt, task.timeSpentSeconds || 0, task.title);
       } catch (err) {
         if (typeof window.showToast === "function") {
           window.showToast(err.message, "error");

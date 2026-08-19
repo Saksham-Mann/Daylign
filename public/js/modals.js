@@ -188,7 +188,7 @@ export function openChecklistModal(uid, categoryId, onCreated) {
     }
 
     try {
-      const newChecklistId = await createChecklist(uid, {
+      const result = await createChecklist(uid, {
         categoryId,
         name,
         settings: {
@@ -196,8 +196,11 @@ export function openChecklistModal(uid, categoryId, onCreated) {
           timerEnabled: isTimerEnabled,
           graphEnabled: isGraphEnabled
         },
-        initialTaskTitles: initialTasks
+        initialTasks: initialTasks
       });
+
+      // Extract ID from result object (createChecklist returns { id, ...data })
+      const newChecklistId = result?.id || result;
 
       notify(`Created checklist "${name}"`, "success");
       modal.close();
@@ -373,6 +376,7 @@ export function showConfirmModal({
       return resolve(window.confirm(`${title}\n\n${message}`));
     }
 
+    // SECURITY: Always set via .textContent (auto-escapes). Never switch to innerHTML.
     if (titleEl) titleEl.textContent = title;
     if (descEl) descEl.textContent = message;
     if (actionBtn) actionBtn.textContent = confirmText;
