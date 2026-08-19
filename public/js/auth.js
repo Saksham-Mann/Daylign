@@ -24,12 +24,12 @@ import {
 const envConfig = window.__FIREBASE_CONFIG__ || {};
 
 export const firebaseConfig = {
-  apiKey: envConfig.apiKey || window.__FIREBASE_API_KEY__ || "YOUR_FIREBASE_API_KEY",
-  authDomain: envConfig.authDomain || window.__FIREBASE_AUTH_DOMAIN__ || "daylign-22030.firebaseapp.com",
-  projectId: envConfig.projectId || window.__FIREBASE_PROJECT_ID__ || "daylign-22030",
-  storageBucket: envConfig.storageBucket || window.__FIREBASE_STORAGE_BUCKET__ || "daylign-22030.firebasestorage.app",
-  messagingSenderId: envConfig.messagingSenderId || window.__FIREBASE_MESSAGING_SENDER_ID__ || "1026732202958",
-  appId: envConfig.appId || window.__FIREBASE_APP_ID__ || "1:1026732202958:web:504ca8ba6a15e7ce07a99f",
+  apiKey: envConfig.apiKey || window.__FIREBASE_API_KEY__ || "",
+  authDomain: envConfig.authDomain || window.__FIREBASE_AUTH_DOMAIN__ || "",
+  projectId: envConfig.projectId || window.__FIREBASE_PROJECT_ID__ || "",
+  storageBucket: envConfig.storageBucket || window.__FIREBASE_STORAGE_BUCKET__ || "",
+  messagingSenderId: envConfig.messagingSenderId || window.__FIREBASE_MESSAGING_SENDER_ID__ || "",
+  appId: envConfig.appId || window.__FIREBASE_APP_ID__ || "",
   measurementId: envConfig.measurementId || window.__FIREBASE_MEASUREMENT_ID__ || ""
 };
 

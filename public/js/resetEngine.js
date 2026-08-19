@@ -26,8 +26,8 @@ export async function runResetEngine(uid) {
   }
 }
 
-// Expose on window for manual testing if needed
-if (typeof window !== "undefined") {
+// Expose on window for manual testing in local development only
+if (typeof window !== "undefined" && window.location.hostname === "localhost") {
   window.runResetEngine = runResetEngine;
 }
 

@@ -150,20 +150,28 @@ export async function deleteCategory(uid, categoryId) {
   const checklistsQuery = query(getChecklistsCol(uid), where("categoryId", "==", categoryId));
   const checklistsSnap = await getDocs(checklistsQuery);
 
-  const batch = writeBatch(db);
+  // Collect all refs to delete for chunked batch processing (MEDIUM-01)
+  const deleteRefs = [];
 
   for (const checkDoc of checklistsSnap.docs) {
     const tasksSnap = await getDocs(getTasksCol(uid, checkDoc.id));
     tasksSnap.forEach((taskDoc) => {
-      batch.delete(taskDoc.ref);
+      deleteRefs.push(taskDoc.ref);
     });
-    batch.delete(checkDoc.ref);
+    deleteRefs.push(checkDoc.ref);
   }
 
   const categoryRef = doc(db, "users", uid, "categories", categoryId);
-  batch.delete(categoryRef);
+  deleteRefs.push(categoryRef);
 
-  await batch.commit();
+  // Commit in chunks of 499 to stay under Firestore's 500-operation batch limit
+  const BATCH_LIMIT = 499;
+  for (let i = 0; i < deleteRefs.length; i += BATCH_LIMIT) {
+    const chunk = deleteRefs.slice(i, i + BATCH_LIMIT);
+    const batch = writeBatch(db);
+    chunk.forEach((ref) => batch.delete(ref));
+    await batch.commit();
+  }
 }
 
 /* ==========================================================================
@@ -262,6 +270,25 @@ export function subscribeChecklists(uid, categoryId, callback) {
     if (typeof callback === "function") callback(checklists);
   }, (err) => {
     console.warn("[DB:subscribeChecklists] Error:", err.message);
+  });
+}
+
+/**
+ * Subscribe to ALL checklists for a user (no category filter).
+ * Used by the Hub view to compute aggregate progress across all categories.
+ *
+ * @param {string} uid - User ID
+ * @param {(checklists: Array) => void} callback - Snapshot callback
+ * @returns {() => void} Unsubscribe function
+ */
+export function subscribeAllChecklists(uid, callback) {
+  if (!uid) return () => {};
+  const q = query(getChecklistsCol(uid), orderBy("order", "asc"));
+  return onSnapshot(q, (snapshot) => {
+    const checklists = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+    if (typeof callback === "function") callback(checklists);
+  }, (err) => {
+    console.warn("[DB:subscribeAllChecklists] Error:", err.message);
   });
 }
 
@@ -699,6 +726,7 @@ export default {
   getChecklists,
   getChecklist,
   subscribeChecklists,
+  subscribeAllChecklists,
   updateChecklist,
   deleteChecklist,
   subscribeTasks,
