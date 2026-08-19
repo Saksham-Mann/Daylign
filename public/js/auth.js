@@ -12,6 +12,9 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signInAnonymously,
+  signInWithPopup,
+  GoogleAuthProvider,
+  updateProfile,
   signOut,
   connectAuthEmulator
 } from "firebase/auth";
@@ -48,6 +51,12 @@ try {
  * Firebase Auth Instance
  */
 export const auth = getAuth(appInstance);
+
+// Google Auth Provider instance
+const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({
+  prompt: "select_account"
+});
 
 // Optional: Enable Auth Emulator if running on localhost with emulator flag
 if (window.location.hostname === "localhost" && window.__USE_FIREBASE_EMULATOR__) {
@@ -130,6 +139,22 @@ export function requireAuth() {
 }
 
 /**
+ * Sign in with Google Popup
+ * 
+ * @returns {Promise<import('firebase/auth').UserCredential>}
+ */
+export async function signInWithGoogle() {
+  try {
+    const userCredential = await signInWithPopup(auth, googleProvider);
+    currentUser = userCredential.user;
+    return userCredential;
+  } catch (error) {
+    console.error("[Auth] Google sign in error:", error.code, error.message);
+    throw normalizeAuthError(error);
+  }
+}
+
+/**
  * Sign in with Email and Password
  * 
  * @param {string} email 
@@ -191,6 +216,40 @@ export async function signInAnonymouslyUser() {
 }
 
 /**
+ * Update user's profile display name or photo
+ * 
+ * @param {{ displayName?: string, photoURL?: string }} profileData 
+ */
+export async function updateUserProfile(profileData) {
+  const user = requireAuth();
+  try {
+    await updateProfile(user, profileData);
+    currentUser = auth.currentUser;
+    return currentUser;
+  } catch (error) {
+    console.error("[Auth] Error updating profile:", error);
+    throw normalizeAuthError(error);
+  }
+}
+
+/**
+ * Check if the user has opted to use their Google photo
+ */
+export function getUseGooglePhotoPreference(uid) {
+  if (!uid) return false;
+  const val = localStorage.getItem(`daylign_use_google_photo_${uid}`);
+  return val === "true";
+}
+
+/**
+ * Set user preference for using Google photo
+ */
+export function setUseGooglePhotoPreference(uid, useGooglePhoto) {
+  if (!uid) return;
+  localStorage.setItem(`daylign_use_google_photo_${uid}`, String(useGooglePhoto));
+}
+
+/**
  * Sign out the current user session
  * 
  * @returns {Promise<void>}
@@ -214,6 +273,12 @@ export async function signOutUser() {
 function normalizeAuthError(error) {
   let message = error.message;
   switch (error.code) {
+    case "auth/popup-closed-by-user":
+      message = "Sign in popup was closed before completing.";
+      break;
+    case "auth/popup-blocked":
+      message = "Popup was blocked by browser. Please allow popups for Daylign.";
+      break;
     case "auth/invalid-email":
       message = "Please enter a valid email address.";
       break;
@@ -232,7 +297,8 @@ function normalizeAuthError(error) {
       message = "Password is too weak. Choose at least 6 characters.";
       break;
     case "auth/operation-not-allowed":
-      message = "This sign-in method is not enabled in Firebase Console.";
+    case "auth/admin-restricted-operation":
+      message = "This sign-in provider is not enabled in Firebase Console (Enable in Authentication > Sign-in method).";
       break;
     case "auth/network-request-failed":
       message = "Network error. Please check your internet connection.";
@@ -251,8 +317,12 @@ export default {
   getCurrentUser,
   getUserId,
   requireAuth,
+  signInWithGoogle,
   signInWithEmail,
   signUpWithEmail,
   signInAnonymouslyUser,
+  updateUserProfile,
+  getUseGooglePhotoPreference,
+  setUseGooglePhotoPreference,
   signOutUser
 };

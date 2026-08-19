@@ -2,7 +2,7 @@
  * @file views/hub.js
  * @description Category Hub View for Daylign.
  * Renders the top-level activity hub with category cards, aggregate completion
- * snapshots, pastel accent themes, "+ New Category" CTA, and onboarding empty state.
+ * snapshots, pastel accent themes, Google Material Symbols icons, and dark mode support.
  */
 
 import {
@@ -15,48 +15,51 @@ import { openCategoryModal, showConfirmModal } from "../modals.js";
 // Pastel token mapping for card badges, borders and accents (Design.md §1.1)
 const COLOR_SCHEMES = {
   lavender: {
-    bg: "bg-lavender-bg",
-    text: "text-indigo-600",
+    bg: "bg-lavender-bg dark:bg-indigo-950/60",
+    text: "text-indigo-600 dark:text-indigo-300",
     accent: "bg-lavender-accent",
-    border: "border-indigo-200",
-    hoverBorder: "hover:border-indigo-300"
+    border: "border-indigo-200 dark:border-indigo-900/60",
+    hoverBorder: "hover:border-indigo-300 dark:hover:border-indigo-700"
   },
   mint: {
-    bg: "bg-mint-bg",
-    text: "text-emerald-700",
+    bg: "bg-mint-bg dark:bg-emerald-950/60",
+    text: "text-emerald-700 dark:text-emerald-300",
     accent: "bg-mint-accent",
-    border: "border-emerald-200",
-    hoverBorder: "hover:border-emerald-300"
+    border: "border-emerald-200 dark:border-emerald-900/60",
+    hoverBorder: "hover:border-emerald-300 dark:hover:border-emerald-700"
   },
   peach: {
-    bg: "bg-peach-bg",
-    text: "text-rose-600",
+    bg: "bg-peach-bg dark:bg-rose-950/60",
+    text: "text-rose-600 dark:text-rose-300",
     accent: "bg-peach-accent",
-    border: "border-rose-200",
-    hoverBorder: "hover:border-rose-300"
+    border: "border-rose-200 dark:border-rose-900/60",
+    hoverBorder: "hover:border-rose-300 dark:hover:border-rose-700"
   },
   butter: {
-    bg: "bg-butter-bg",
-    text: "text-amber-700",
+    bg: "bg-butter-bg dark:bg-amber-950/60",
+    text: "text-amber-700 dark:text-amber-300",
     accent: "bg-butter-accent",
-    border: "border-amber-200",
-    hoverBorder: "hover:border-amber-300"
+    border: "border-amber-200 dark:border-amber-900/60",
+    hoverBorder: "hover:border-amber-300 dark:hover:border-amber-700"
   }
 };
 
 /**
- * Map icon key to emoji glyph
+ * Map icon key to Google Material Symbol
  */
-function getIconGlyph(iconKey) {
+function getIconSymbol(iconKey) {
   const map = {
-    "book-open": "📖",
-    "briefcase": "💼",
-    "heart": "💖",
-    "check-circle": "✅",
-    "sparkles": "✨",
-    "shopping-cart": "🛒"
+    "book-open": "menu_book",
+    "briefcase": "work",
+    "heart": "favorite",
+    "check-circle": "task_alt",
+    "sparkles": "auto_awesome",
+    "shopping-cart": "shopping_cart",
+    "fitness": "fitness_center",
+    "code": "code"
   };
-  return map[iconKey] || "📋";
+  const iconName = map[iconKey] || "folder";
+  return `<span class="material-symbols-outlined text-2xl">${iconName}</span>`;
 }
 
 /**
@@ -85,13 +88,11 @@ export function renderHub(container, uid) {
       <!-- Hub Top Bar -->
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 id="hub-heading" class="text-2xl sm:text-3xl font-bold text-slate-800 tracking-tight">Your Activity Hub</h1>
-          <p class="text-xs sm:text-sm text-slate-500 mt-1">Organize your routines, study sessions, and checklists by activity.</p>
+          <h1 id="hub-heading" class="text-2xl sm:text-3xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">Your Activity Hub</h1>
+          <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">Organize your routines, study sessions, and checklists by activity.</p>
         </div>
-        <button type="button" id="hub-new-category-btn" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs sm:text-sm font-semibold shadow-sm transition-all focus:ring-2 focus:ring-offset-2 focus:ring-slate-800">
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-          </svg>
+        <button type="button" id="hub-new-category-btn" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white text-xs sm:text-sm font-semibold shadow-sm transition-all focus:ring-2 focus:ring-offset-2 focus:ring-slate-800">
+          <span class="material-symbols-outlined text-lg">add</span>
           New Category
         </button>
       </div>
@@ -99,8 +100,8 @@ export function renderHub(container, uid) {
       <!-- Categories Grid Container -->
       <div id="categories-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 pt-2" role="list">
         <div class="col-span-full py-16 text-center">
-          <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-slate-200 border-t-lavender-accent"></div>
-          <p class="text-xs text-slate-400 mt-3 font-medium">Loading your activities...</p>
+          <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-slate-200 dark:border-slate-800 border-t-lavender-accent"></div>
+          <p class="text-xs text-slate-400 dark:text-slate-500 mt-3 font-medium">Loading your activities...</p>
         </div>
       </div>
     </section>
@@ -118,20 +119,18 @@ export function renderHub(container, uid) {
     if (!grid) return;
 
     if (categories.length === 0) {
-      // Empty Onboarding State (AppFlow.md §1)
+      // Empty Onboarding State
       grid.innerHTML = `
-        <article class="col-span-full py-16 px-6 text-center bg-surface rounded-2xl border border-slate-100 border-dashed shadow-sm" role="listitem">
-          <div class="w-14 h-14 rounded-2xl bg-lavender-bg text-lavender-accent flex items-center justify-center mx-auto mb-4 shadow-sm">
-            <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
+        <article class="col-span-full py-16 px-6 text-center bg-surface dark:bg-[#131B2E] rounded-3xl border border-slate-200 dark:border-slate-800 border-dashed shadow-sm" role="listitem">
+          <div class="w-14 h-14 rounded-2xl bg-lavender-bg dark:bg-indigo-950/60 text-lavender-accent flex items-center justify-center mx-auto mb-4 shadow-sm">
+            <span class="material-symbols-outlined text-3xl text-indigo-500 dark:text-indigo-400">category</span>
           </div>
-          <h2 class="text-base font-bold text-slate-800">Create your first activity</h2>
-          <p class="text-xs text-slate-500 mt-1.5 max-w-sm mx-auto leading-relaxed">
+          <h2 class="text-base font-bold text-slate-800 dark:text-slate-100">Create your first activity</h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1.5 max-w-sm mx-auto leading-relaxed">
             Group your checklists into calming categories like Study, Health, Chores, or Deep Work.
           </p>
-          <button type="button" id="empty-create-category-btn" class="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold shadow-sm transition-all">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+          <button type="button" id="empty-create-category-btn" class="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white text-xs font-semibold shadow-sm transition-all">
+            <span class="material-symbols-outlined text-sm">add</span>
             Create Category
           </button>
         </article>
@@ -150,42 +149,38 @@ export function renderHub(container, uid) {
       const progressPercent = totalTasks > 0 ? Math.round((totalCompleted / totalTasks) * 100) : 0;
 
       return `
-        <article class="group rounded-2xl bg-surface p-5 border border-slate-100 shadow-sm hover:shadow-card-hover transition-all duration-200 cursor-pointer flex flex-col justify-between focus:outline-none focus-visible:ring-2 focus-visible:ring-lavender" data-category-id="${cat.id}" role="listitem" tabindex="0" aria-label="Category: ${escapeHtml(cat.name)}, ${catChecklists.length} checklists, ${progressPercent}% completed today">
+        <article class="group rounded-3xl bg-surface dark:bg-[#131B2E] p-5 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-card-hover transition-all duration-200 cursor-pointer flex flex-col justify-between focus:outline-none focus-visible:ring-2 focus-visible:ring-lavender" data-category-id="${cat.id}" role="listitem" tabindex="0" aria-label="Category: ${escapeHtml(cat.name)}, ${catChecklists.length} checklists, ${progressPercent}% completed today">
           <div>
             <!-- Card Header: Icon & Action Menu -->
             <div class="flex items-start justify-between gap-3 mb-4">
-              <div class="w-12 h-12 rounded-2xl ${scheme.bg} flex items-center justify-center ${scheme.text} text-xl shadow-sm transition-transform duration-200 group-hover:scale-105">
-                <span aria-hidden="true">${getIconGlyph(cat.icon)}</span>
+              <div class="w-12 h-12 rounded-2xl ${scheme.bg} flex items-center justify-center ${scheme.text} shadow-sm transition-transform duration-200 group-hover:scale-105">
+                ${getIconSymbol(cat.icon)}
               </div>
 
               <div class="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
-                <button type="button" class="edit-category-btn p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors" data-id="${cat.id}" aria-label="Edit category: ${escapeHtml(cat.name)}">
-                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                  </svg>
+                <button type="button" class="edit-category-btn p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" data-id="${cat.id}" aria-label="Edit category: ${escapeHtml(cat.name)}">
+                  <span class="material-symbols-outlined text-base">edit</span>
                 </button>
-                <button type="button" class="delete-category-btn p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors" data-id="${cat.id}" aria-label="Delete category: ${escapeHtml(cat.name)}">
-                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
+                <button type="button" class="delete-category-btn p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors" data-id="${cat.id}" aria-label="Delete category: ${escapeHtml(cat.name)}">
+                  <span class="material-symbols-outlined text-base">delete</span>
                 </button>
               </div>
             </div>
 
             <!-- Card Content -->
-            <h2 class="text-base font-bold text-slate-800 group-hover:text-indigo-600 transition-colors">${escapeHtml(cat.name)}</h2>
-            <p class="text-xs text-slate-500 mt-1">
+            <h2 class="text-base font-bold text-slate-800 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">${escapeHtml(cat.name)}</h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
               ${catChecklists.length} checklist${catChecklists.length === 1 ? "" : "s"} · ${totalTasks} task${totalTasks === 1 ? "" : "s"}
             </p>
           </div>
 
           <!-- Card Progress Footer -->
-          <div class="mt-6 pt-4 border-t border-slate-50">
-            <div class="flex items-center justify-between text-xs text-slate-500 mb-1.5 font-medium">
+          <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800/80">
+            <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1.5 font-medium">
               <span>Today's completion</span>
-              <span class="font-semibold text-slate-700">${progressPercent}%</span>
+              <span class="font-semibold text-slate-700 dark:text-slate-300">${progressPercent}%</span>
             </div>
-            <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden" role="progressbar" aria-valuenow="${progressPercent}" aria-valuemin="0" aria-valuemax="100">
+            <div class="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden" role="progressbar" aria-valuenow="${progressPercent}" aria-valuemin="0" aria-valuemax="100">
               <div class="h-full ${scheme.accent} rounded-full transition-all duration-500" style="width: ${progressPercent}%"></div>
             </div>
           </div>

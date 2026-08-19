@@ -2,7 +2,7 @@
  * @file views/categoryDetail.js
  * @description Category Detail View for Daylign.
  * Displays all checklists under a specific category, settings badges (Daily/Permanent,
- * Timer, Graph), task progress ratios, and "+ New Checklist" CTA.
+ * Timer, Graph), task progress ratios, Google Material Symbols, and dark mode styling.
  */
 
 import {
@@ -20,44 +20,47 @@ import {
 // Pastel token mapping
 const COLOR_SCHEMES = {
   lavender: {
-    bg: "bg-lavender-bg",
-    text: "text-indigo-600",
+    bg: "bg-lavender-bg dark:bg-indigo-950/60",
+    text: "text-indigo-600 dark:text-indigo-300",
     accent: "bg-lavender-accent",
-    border: "border-indigo-200"
+    border: "border-indigo-200 dark:border-indigo-900/60"
   },
   mint: {
-    bg: "bg-mint-bg",
-    text: "text-emerald-700",
+    bg: "bg-mint-bg dark:bg-emerald-950/60",
+    text: "text-emerald-700 dark:text-emerald-300",
     accent: "bg-mint-accent",
-    border: "border-emerald-200"
+    border: "border-emerald-200 dark:border-emerald-900/60"
   },
   peach: {
-    bg: "bg-peach-bg",
-    text: "text-rose-600",
+    bg: "bg-peach-bg dark:bg-rose-950/60",
+    text: "text-rose-600 dark:text-rose-300",
     accent: "bg-peach-accent",
-    border: "border-rose-200"
+    border: "border-rose-200 dark:border-rose-900/60"
   },
   butter: {
-    bg: "bg-butter-bg",
-    text: "text-amber-700",
+    bg: "bg-butter-bg dark:bg-amber-950/60",
+    text: "text-amber-700 dark:text-amber-300",
     accent: "bg-butter-accent",
-    border: "border-amber-200"
+    border: "border-amber-200 dark:border-amber-900/60"
   }
 };
 
 /**
- * Map icon key to emoji glyph
+ * Map icon key to Google Material Symbol
  */
-function getIconGlyph(iconKey) {
+function getIconSymbol(iconKey) {
   const map = {
-    "book-open": "📖",
-    "briefcase": "💼",
-    "heart": "💖",
-    "check-circle": "✅",
-    "sparkles": "✨",
-    "shopping-cart": "🛒"
+    "book-open": "menu_book",
+    "briefcase": "work",
+    "heart": "favorite",
+    "check-circle": "task_alt",
+    "sparkles": "auto_awesome",
+    "shopping-cart": "shopping_cart",
+    "fitness": "fitness_center",
+    "code": "code"
   };
-  return map[iconKey] || "📋";
+  const iconName = map[iconKey] || "folder";
+  return `<span class="material-symbols-outlined text-2xl">${iconName}</span>`;
 }
 
 /**
@@ -108,23 +111,24 @@ export async function renderCategoryDetail(container, uid, categoryId, setBreadc
   container.innerHTML = `
     <section aria-labelledby="category-heading" class="space-y-6">
       <!-- Category Header Card -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-surface p-6 rounded-2xl border border-slate-100 shadow-sm">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-surface dark:bg-[#131B2E] p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
         <div class="flex items-center gap-4">
-          <div class="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl ${scheme.bg} flex items-center justify-center ${scheme.text} text-2xl shadow-sm">
-            <span aria-hidden="true">${getIconGlyph(category.icon)}</span>
+          <div class="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl ${scheme.bg} flex items-center justify-center ${scheme.text} shadow-sm">
+            ${getIconSymbol(category.icon)}
           </div>
           <div>
-            <h1 id="category-heading" class="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">${escapeHtml(category.name)}</h1>
-            <p class="text-xs text-slate-500 mt-0.5">Manage and track your checklists under this activity</p>
+            <h1 id="category-heading" class="text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">${escapeHtml(category.name)}</h1>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Manage and track your checklists under this activity</p>
           </div>
         </div>
 
         <div class="flex items-center gap-2">
-          <button type="button" id="edit-category-btn" class="px-3.5 py-2 rounded-xl text-xs font-semibold border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors" aria-label="Edit category settings">
+          <button type="button" id="edit-category-btn" class="px-3.5 py-2 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center gap-1.5" aria-label="Edit category settings">
+            <span class="material-symbols-outlined text-sm">edit</span>
             Edit Activity
           </button>
-          <button type="button" id="new-checklist-btn" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold shadow-sm transition-all focus:ring-2 focus:ring-offset-2 focus:ring-slate-800">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+          <button type="button" id="new-checklist-btn" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-900 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white text-xs font-semibold shadow-sm transition-all focus:ring-2 focus:ring-offset-2 focus:ring-slate-800">
+            <span class="material-symbols-outlined text-base">add</span>
             New Checklist
           </button>
         </div>
@@ -133,8 +137,8 @@ export async function renderCategoryDetail(container, uid, categoryId, setBreadc
       <!-- Checklists Grid / List -->
       <div id="checklists-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4" role="list">
         <div class="col-span-full py-12 text-center">
-          <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-slate-200 border-t-lavender-accent"></div>
-          <p class="text-xs text-slate-400 mt-3 font-medium">Loading checklists...</p>
+          <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-slate-200 dark:border-slate-800 border-t-lavender-accent"></div>
+          <p class="text-xs text-slate-400 dark:text-slate-500 mt-3 font-medium">Loading checklists...</p>
         </div>
       </div>
     </section>
@@ -142,7 +146,6 @@ export async function renderCategoryDetail(container, uid, categoryId, setBreadc
 
   container.querySelector("#edit-category-btn")?.addEventListener("click", () => {
     openCategoryModal(uid, category, async () => {
-      // Re-fetch and re-render header on update
       const updated = await getCategory(uid, categoryId);
       if (updated) {
         category = updated;
@@ -169,15 +172,16 @@ export async function renderCategoryDetail(container, uid, categoryId, setBreadc
 
     if (checklists.length === 0) {
       grid.innerHTML = `
-        <article class="col-span-full py-16 px-6 text-center bg-surface rounded-2xl border border-slate-100 border-dashed shadow-sm" role="listitem">
-          <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-3">
-            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+        <article class="col-span-full py-16 px-6 text-center bg-surface dark:bg-[#131B2E] rounded-3xl border border-slate-200 dark:border-slate-800 border-dashed shadow-sm" role="listitem">
+          <div class="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-300 flex items-center justify-center mx-auto mb-3">
+            <span class="material-symbols-outlined text-2xl">checklist</span>
           </div>
-          <h2 class="text-base font-bold text-slate-800">No checklists in this activity yet</h2>
-          <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto leading-relaxed">
+          <h2 class="text-base font-bold text-slate-800 dark:text-slate-100">No checklists in this activity yet</h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto leading-relaxed">
             Create a daily recurring habit checklist or a permanent task list to get started.
           </p>
-          <button type="button" id="empty-create-checklist-btn" class="mt-4 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold shadow-sm transition-all">
+          <button type="button" id="empty-create-checklist-btn" class="mt-4 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white text-xs font-semibold shadow-sm transition-all flex items-center gap-1.5 mx-auto">
+            <span class="material-symbols-outlined text-base">add</span>
             Create Checklist
           </button>
         </article>
@@ -199,46 +203,54 @@ export async function renderCategoryDetail(container, uid, categoryId, setBreadc
       const pct = taskCount > 0 ? Math.round((completedCount / taskCount) * 100) : 0;
 
       return `
-        <article class="group rounded-2xl bg-surface p-5 border border-slate-100 shadow-sm hover:shadow-card-hover transition-all duration-200 cursor-pointer flex flex-col justify-between focus:outline-none focus-visible:ring-2 focus-visible:ring-lavender" data-checklist-id="${ch.id}" role="listitem" tabindex="0" aria-label="Checklist: ${escapeHtml(ch.name)}, ${completedCount} of ${taskCount} completed">
+        <article class="group rounded-3xl bg-surface dark:bg-[#131B2E] p-5 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-card-hover transition-all duration-200 cursor-pointer flex flex-col justify-between focus:outline-none focus-visible:ring-2 focus-visible:ring-lavender" data-checklist-id="${ch.id}" role="listitem" tabindex="0" aria-label="Checklist: ${escapeHtml(ch.name)}, ${completedCount} of ${taskCount} completed">
           <div>
             <!-- Settings Pills & Actions -->
             <div class="flex items-start justify-between gap-2 mb-3">
               <div class="flex items-center gap-1.5 flex-wrap">
-                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold ${isDaily ? "bg-amber-50 text-amber-800 border border-amber-200" : "bg-slate-100 text-slate-700"}">
-                  ${isDaily ? "☀️ Daily Reset" : "📌 Permanent"}
+                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold ${
+                  isDaily
+                    ? "bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-900/60"
+                    : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                }">
+                  <span class="material-symbols-outlined text-xs ${isDaily ? "text-amber-600 dark:text-amber-400" : "text-indigo-500"}">${isDaily ? "wb_sunny" : "push_pin"}</span>
+                  ${isDaily ? "Daily Reset" : "Permanent"}
                 </span>
-                ${hasTimer ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-mint-bg text-emerald-800" title="Stopwatch Timer Enabled">⏱️ Timer</span>` : ""}
-                ${hasGraph ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-lavender-bg text-indigo-800" title="Analytics Graph Enabled">📊 Analytics</span>` : ""}
+                ${
+                  hasTimer
+                    ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-mint-bg dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300" title="Stopwatch Timer Enabled"><span class="material-symbols-outlined text-xs">timer</span> Timer</span>`
+                    : ""
+                }
+                ${
+                  hasGraph
+                    ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-lavender-bg dark:bg-indigo-950/60 text-indigo-800 dark:text-indigo-300" title="Analytics Graph Enabled"><span class="material-symbols-outlined text-xs">bar_chart</span> Analytics</span>`
+                    : ""
+                }
               </div>
 
               <div class="flex items-center gap-1">
-                <button type="button" class="checklist-settings-btn p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors" data-id="${ch.id}" aria-label="Open settings for checklist ${escapeHtml(ch.name)}">
-                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
+                <button type="button" class="checklist-settings-btn p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" data-id="${ch.id}" aria-label="Open settings for checklist ${escapeHtml(ch.name)}">
+                  <span class="material-symbols-outlined text-base">settings</span>
                 </button>
-                <button type="button" class="checklist-delete-btn p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors" data-id="${ch.id}" aria-label="Delete checklist ${escapeHtml(ch.name)}">
-                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
+                <button type="button" class="checklist-delete-btn p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors" data-id="${ch.id}" aria-label="Delete checklist ${escapeHtml(ch.name)}">
+                  <span class="material-symbols-outlined text-base">delete</span>
                 </button>
               </div>
             </div>
 
             <!-- Title & Progress Count -->
-            <h2 class="text-base font-bold text-slate-800 group-hover:text-indigo-600 transition-colors">${escapeHtml(ch.name)}</h2>
-            <p class="text-xs text-slate-500 mt-1">${completedCount} of ${taskCount} task${taskCount === 1 ? "" : "s"} completed (${pct}%)</p>
+            <h2 class="text-base font-bold text-slate-800 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">${escapeHtml(ch.name)}</h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">${completedCount} of ${taskCount} task${taskCount === 1 ? "" : "s"} completed (${pct}%)</p>
           </div>
 
           <!-- Progress Bar & Link -->
-          <div class="mt-5 pt-3 border-t border-slate-50 flex items-center justify-between">
-            <div class="flex-1 mr-3 h-1.5 bg-slate-100 rounded-full overflow-hidden" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100">
+          <div class="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
+            <div class="flex-1 mr-3 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100">
               <div class="h-full ${scheme.accent} rounded-full transition-all duration-300" style="width: ${pct}%"></div>
             </div>
-            <span class="text-xs font-semibold text-slate-700 flex items-center gap-1 group-hover:text-indigo-600 transition-colors">
+            <span class="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
               Open
-              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+              <span class="material-symbols-outlined text-sm">arrow_forward</span>
             </span>
           </div>
         </article>

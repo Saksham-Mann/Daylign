@@ -2,7 +2,7 @@
  * @file views/checklistDetail.js
  * @description Checklist Detail View for Daylign.
  * Manages task list execution, live stopwatch start/pause, task completion logging to timeLogs,
- * inline renaming, task reordering, and integrated Chart.js analytics visualization.
+ * inline renaming, task reordering, Google Material Symbols, and integrated Chart.js analytics.
  */
 
 import {
@@ -40,26 +40,26 @@ import {
 // Pastel token styling mapping
 const COLOR_SCHEMES = {
   lavender: {
-    bg: "bg-lavender-bg",
-    text: "text-indigo-600",
+    bg: "bg-lavender-bg dark:bg-indigo-950/60",
+    text: "text-indigo-600 dark:text-indigo-300",
     accent: "bg-lavender-accent",
     hex: "#818CF8"
   },
   mint: {
-    bg: "bg-mint-bg",
-    text: "text-emerald-700",
+    bg: "bg-mint-bg dark:bg-emerald-950/60",
+    text: "text-emerald-700 dark:text-emerald-300",
     accent: "bg-mint-accent",
     hex: "#34D399"
   },
   peach: {
-    bg: "bg-peach-bg",
-    text: "text-rose-600",
+    bg: "bg-peach-bg dark:bg-rose-950/60",
+    text: "text-rose-600 dark:text-rose-300",
     accent: "bg-peach-accent",
     hex: "#FB7185"
   },
   butter: {
-    bg: "bg-butter-bg",
-    text: "text-amber-700",
+    bg: "bg-butter-bg dark:bg-amber-950/60",
+    text: "text-amber-700 dark:text-amber-300",
     accent: "bg-butter-accent",
     hex: "#FBBF24"
   }
@@ -128,25 +128,31 @@ export async function renderChecklistDetail(container, uid, checklistId, setBrea
   container.innerHTML = `
     <section class="space-y-6" aria-labelledby="checklist-title-heading">
       <!-- Top Header Card -->
-      <div class="bg-surface p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div class="bg-surface dark:bg-[#131B2E] p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div class="flex items-center gap-2 mb-1.5 flex-wrap">
-            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${isDaily ? "bg-amber-50 text-amber-800 border border-amber-200" : "bg-slate-100 text-slate-700"}">
-              ${isDaily ? "☀️ Daily Reset (00:00)" : "📌 Permanent"}
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
+              isDaily
+                ? "bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-900/60"
+                : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+            }">
+              <span class="material-symbols-outlined text-xs ${isDaily ? "text-amber-600 dark:text-amber-400" : "text-indigo-500"}">${isDaily ? "wb_sunny" : "push_pin"}</span>
+              ${isDaily ? "Daily Reset (00:00)" : "Permanent"}
             </span>
-            <span class="text-xs text-slate-400">
-              in <a href="#/category/${checklist.categoryId}" class="text-indigo-600 hover:underline font-medium">${escapeHtml(categoryName)}</a>
+            <span class="text-xs text-slate-400 dark:text-slate-500">
+              in <a href="#/category/${checklist.categoryId}" class="text-indigo-600 dark:text-indigo-400 hover:underline font-medium">${escapeHtml(categoryName)}</a>
             </span>
           </div>
-          <h1 id="checklist-title-heading" class="text-2xl font-bold text-slate-800 tracking-tight">${escapeHtml(checklist.name)}</h1>
+          <h1 id="checklist-title-heading" class="text-2xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">${escapeHtml(checklist.name)}</h1>
         </div>
 
         <div class="flex items-center gap-2">
-          <button type="button" id="checklist-settings-btn" class="px-3.5 py-2 rounded-xl text-xs font-semibold border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-1.5" aria-label="Checklist settings">
-            <svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+          <button type="button" id="checklist-settings-btn" class="px-3.5 py-2 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center gap-1.5" aria-label="Checklist settings">
+            <span class="material-symbols-outlined text-sm">settings</span>
             Settings
           </button>
-          <button type="button" id="checklist-delete-btn" class="px-3.5 py-2 rounded-xl text-xs font-semibold border border-rose-200 text-rose-600 hover:bg-rose-50 transition-colors" aria-label="Delete this checklist">
+          <button type="button" id="checklist-delete-btn" class="px-3.5 py-2 rounded-xl text-xs font-semibold border border-rose-200 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors flex items-center gap-1.5" aria-label="Delete this checklist">
+            <span class="material-symbols-outlined text-sm">delete</span>
             Delete
           </button>
         </div>
@@ -156,38 +162,38 @@ export async function renderChecklistDetail(container, uid, checklistId, setBrea
       <div class="grid grid-cols-1 ${graphEnabled ? "lg:grid-cols-[1fr_380px]" : ""} gap-6 items-start">
         
         <!-- Task Execution Section -->
-        <section aria-labelledby="tasks-heading" class="bg-surface p-6 rounded-2xl border border-slate-100 shadow-sm space-y-4">
-          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-            <h2 id="tasks-heading" class="text-base font-bold text-slate-800">Tasks</h2>
-            <span id="tasks-counter-badge" class="text-xs font-semibold text-slate-500">0 / 0 completed</span>
+        <section aria-labelledby="tasks-heading" class="bg-surface dark:bg-[#131B2E] p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+            <h2 id="tasks-heading" class="text-base font-bold text-slate-800 dark:text-slate-100">Tasks</h2>
+            <span id="tasks-counter-badge" class="text-xs font-semibold text-slate-500 dark:text-slate-400">0 / 0 completed</span>
           </div>
 
           <!-- Add Task Input Form -->
           <form id="new-task-form" class="flex gap-2">
-            <input type="text" id="task-title-input" placeholder="Add a new task..." required maxlength="120" class="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:border-lavender-accent focus:ring-1 focus:ring-lavender-accent transition-all" />
-            <button type="submit" id="add-task-submit-btn" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold shadow-sm transition-all flex items-center gap-1.5 focus:ring-2 focus:ring-slate-800">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+            <input type="text" id="task-title-input" placeholder="Add a new task..." required maxlength="120" class="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs sm:text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-lavender-accent focus:ring-1 focus:ring-lavender-accent transition-all" />
+            <button type="submit" id="add-task-submit-btn" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white text-xs font-semibold shadow-sm transition-all flex items-center gap-1.5 focus:ring-2 focus:ring-slate-800">
+              <span class="material-symbols-outlined text-base">add</span>
               Add
             </button>
           </form>
 
-          <!-- Task Items List (UL/LI semantic list per Rules.md §2) -->
+          <!-- Task Items List -->
           <ul id="task-list-items" class="space-y-2.5 pt-1" role="list">
-            <li class="py-6 text-center text-xs text-slate-400 font-medium">Loading tasks...</li>
+            <li class="py-6 text-center text-xs text-slate-400 dark:text-slate-500 font-medium">Loading tasks...</li>
           </ul>
         </section>
 
-        <!-- Analytics Section (Design.md §2.4) -->
+        <!-- Analytics Section -->
         ${graphEnabled ? `
-          <section aria-label="Checklist analytics" class="bg-surface p-6 rounded-2xl border border-slate-100 shadow-sm space-y-4">
-            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+          <section aria-label="Checklist analytics" class="bg-surface dark:bg-[#131B2E] p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <div>
-                <h2 class="text-base font-bold text-slate-800">Analytics</h2>
-                <p class="text-[11px] text-slate-400">Completion & focus audit</p>
+                <h2 class="text-base font-bold text-slate-800 dark:text-slate-100">Analytics</h2>
+                <p class="text-[11px] text-slate-400 dark:text-slate-500">Completion & focus audit</p>
               </div>
-              <div class="inline-flex rounded-lg bg-slate-100 p-0.5 text-xs font-medium" role="group" aria-label="Analytics range toggle">
-                <button type="button" id="btn-range-7d" class="px-2.5 py-1 rounded-md bg-white text-slate-800 shadow-sm font-semibold transition-all">7d</button>
-                <button type="button" id="btn-range-30d" class="px-2.5 py-1 rounded-md text-slate-500 hover:text-slate-800 transition-all">30d</button>
+              <div class="inline-flex rounded-xl bg-slate-100 dark:bg-slate-900 p-0.5 text-xs font-medium" role="group" aria-label="Analytics range toggle">
+                <button type="button" id="btn-range-7d" class="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 shadow-sm font-semibold transition-all">7d</button>
+                <button type="button" id="btn-range-30d" class="px-2.5 py-1 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition-all">30d</button>
               </div>
             </div>
 
@@ -197,9 +203,9 @@ export async function renderChecklistDetail(container, uid, checklistId, setBrea
             </div>
 
             <!-- Aggregate Stats Bar -->
-            <div id="analytics-summary-stats" class="text-xs text-slate-500 border-t border-slate-100 pt-3 flex items-center justify-between font-medium">
-              <span>Avg Active Rate: <strong id="stat-avg-rate" class="text-slate-800">0%</strong></span>
-              ${timerEnabled ? `<span>Time Logged: <strong id="stat-total-time" class="text-emerald-700 font-semibold">0m</strong></span>` : ""}
+            <div id="analytics-summary-stats" class="text-xs text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800 pt-3 flex items-center justify-between font-medium">
+              <span>Avg Active Rate: <strong id="stat-avg-rate" class="text-slate-800 dark:text-slate-200">0%</strong></span>
+              ${timerEnabled ? `<span>Time Logged: <strong id="stat-total-time" class="text-emerald-600 dark:text-emerald-400 font-semibold">0m</strong></span>` : ""}
             </div>
           </section>
         ` : ""}
@@ -211,7 +217,6 @@ export async function renderChecklistDetail(container, uid, checklistId, setBrea
   // Bind Settings Modal
   container.querySelector("#checklist-settings-btn")?.addEventListener("click", () => {
     openChecklistSettingsModal(uid, checklist, async () => {
-      // Re-mount view on settings change
       await renderChecklistDetail(container, uid, checklistId, setBreadcrumbs);
     });
   });
@@ -289,19 +294,18 @@ export async function renderChecklistDetail(container, uid, checklistId, setBrea
 
     btn7d?.addEventListener("click", () => {
       activeDaysRange = 7;
-      btn7d.className = "px-2.5 py-1 rounded-md bg-white text-slate-800 shadow-sm font-semibold transition-all";
-      btn30d.className = "px-2.5 py-1 rounded-md text-slate-500 hover:text-slate-800 transition-all";
+      btn7d.className = "px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 shadow-sm font-semibold transition-all";
+      btn30d.className = "px-2.5 py-1 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition-all";
       refreshAnalytics();
     });
 
     btn30d?.addEventListener("click", () => {
       activeDaysRange = 30;
-      btn30d.className = "px-2.5 py-1 rounded-md bg-white text-slate-800 shadow-sm font-semibold transition-all";
-      btn7d.className = "px-2.5 py-1 rounded-md text-slate-500 hover:text-slate-800 transition-all";
+      btn30d.className = "px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 shadow-sm font-semibold transition-all";
+      btn7d.className = "px-2.5 py-1 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition-all";
       refreshAnalytics();
     });
 
-    // Initial Chart Render
     refreshAnalytics();
   }
 
@@ -327,7 +331,7 @@ export async function renderChecklistDetail(container, uid, checklistId, setBrea
 }
 
 /**
- * Render Tasks List Items with Idle, Running, and Completed states (Design.md §2.2)
+ * Render Tasks List Items with Idle, Running, and Completed states
  */
 function renderTasksList(container, uid, checklistId, tasks, options = {}) {
   const listEl = container.querySelector("#task-list-items");
@@ -344,7 +348,7 @@ function renderTasksList(container, uid, checklistId, tasks, options = {}) {
 
   if (tasks.length === 0) {
     listEl.innerHTML = `
-      <li class="py-8 text-center text-xs text-slate-400 font-medium">
+      <li class="py-8 text-center text-xs text-slate-400 dark:text-slate-500 font-medium">
         No tasks yet. Type a task title above and press Add.
       </li>
     `;
@@ -360,20 +364,30 @@ function renderTasksList(container, uid, checklistId, tasks, options = {}) {
     const accumulated = task.timeSpentSeconds || 0;
 
     return `
-      <li class="group rounded-2xl border ${isRunning ? "border-emerald-400 bg-emerald-50/30 animate-timer-active shadow-sm" : isCompleted ? "border-slate-100 bg-slate-50/60" : "border-slate-200/80 bg-surface hover:border-slate-300 hover:shadow-subtle"} p-3.5 flex items-center justify-between gap-3 transition-all duration-200" data-task-id="${task.id}" role="listitem">
+      <li class="group rounded-2xl border ${
+        isRunning
+          ? "border-emerald-400 bg-emerald-50/30 dark:bg-emerald-950/20 animate-timer-active shadow-sm"
+          : isCompleted
+          ? "border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40"
+          : "border-slate-200 dark:border-slate-800 bg-surface dark:bg-[#131B2E] hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-subtle"
+      } p-3.5 flex items-center justify-between gap-3 transition-all duration-200" data-task-id="${task.id}" role="listitem">
         
         <!-- Left: Checkbox + Title / Inline Edit -->
         <div class="flex items-center gap-3 flex-1 min-w-0">
-          <button type="button" class="task-checkbox-btn flex-shrink-0 w-5 h-5 rounded-lg border flex items-center justify-center transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${isCompleted ? "bg-mint-accent border-mint-accent text-white animate-task-bounce" : "border-slate-300 bg-white hover:border-emerald-400"}" data-id="${task.id}" data-completed="${isCompleted}" aria-label="${isCompleted ? "Mark incomplete" : "Mark complete"}: ${escapeHtml(task.title)}">
-            ${isCompleted ? `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>` : ""}
+          <button type="button" class="task-checkbox-btn flex-shrink-0 w-5 h-5 rounded-lg border flex items-center justify-center transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
+            isCompleted
+              ? "bg-mint-accent border-mint-accent text-white animate-task-bounce"
+              : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 hover:border-emerald-400"
+          }" data-id="${task.id}" data-completed="${isCompleted}" aria-label="${isCompleted ? "Mark incomplete" : "Mark complete"}: ${escapeHtml(task.title)}">
+            ${isCompleted ? `<span class="material-symbols-outlined text-sm font-bold">check</span>` : ""}
           </button>
 
           <!-- Task Title or Inline Edit Form -->
           <div class="flex-1 min-w-0">
-            <span class="task-title-text text-xs sm:text-sm font-medium ${isCompleted ? "line-through text-slate-400" : "text-slate-800"} truncate block cursor-pointer hover:text-indigo-600 transition-colors" data-id="${task.id}" title="Click to rename">
+            <span class="task-title-text text-xs sm:text-sm font-medium ${isCompleted ? "line-through text-slate-400 dark:text-slate-500" : "text-slate-800 dark:text-slate-100"} truncate block cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors" data-id="${task.id}" title="Click to rename">
               ${escapeHtml(task.title)}
             </span>
-            <input type="text" class="task-rename-input hidden w-full px-2 py-1 text-xs sm:text-sm border border-indigo-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-400" value="${escapeHtml(task.title)}" data-id="${task.id}" maxlength="120" />
+            <input type="text" class="task-rename-input hidden w-full px-2 py-1 text-xs sm:text-sm border border-indigo-300 dark:border-indigo-600 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-indigo-400" value="${escapeHtml(task.title)}" data-id="${task.id}" maxlength="120" />
           </div>
         </div>
 
@@ -384,47 +398,52 @@ function renderTasksList(container, uid, checklistId, tasks, options = {}) {
           ${timerEnabled ? `
             <div class="flex items-center gap-1.5">
               ${isRunning ? `
-                <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-100/70 border border-emerald-300" aria-live="polite">
+                <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-100/70 dark:bg-emerald-950/70 border border-emerald-300 dark:border-emerald-700" aria-live="polite">
                   <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-                  <span class="font-mono text-xs font-bold text-emerald-800 task-live-counter" data-id="${task.id}">
+                  <span class="font-mono text-xs font-bold text-emerald-800 dark:text-emerald-300 task-live-counter" data-id="${task.id}">
                     ${formatDuration(accumulated)}
                   </span>
                 </div>
-                <button type="button" class="pause-timer-btn px-2.5 py-1 rounded-xl text-xs font-semibold bg-amber-100 text-amber-800 hover:bg-amber-200 transition-colors flex items-center gap-1" data-id="${task.id}" aria-label="Pause stopwatch for ${escapeHtml(task.title)}">
-                  ⏸ Pause
+                <button type="button" class="pause-timer-btn px-2.5 py-1 rounded-xl text-xs font-semibold bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/60 transition-colors flex items-center gap-1" data-id="${task.id}" aria-label="Pause stopwatch for ${escapeHtml(task.title)}">
+                  <span class="material-symbols-outlined text-sm">pause</span>
+                  Pause
                 </button>
               ` : `
                 ${accumulated > 0 ? `
-                  <span class="font-mono text-[11px] ${isCompleted ? "text-emerald-700 bg-mint-bg/80 px-2 py-0.5 rounded-full font-medium" : "text-slate-400"}">
+                  <span class="font-mono text-[11px] ${isCompleted ? "text-emerald-700 dark:text-emerald-300 bg-mint-bg/80 dark:bg-emerald-950/80 px-2 py-0.5 rounded-full font-medium" : "text-slate-400 dark:text-slate-500"}">
                     ${isCompleted ? `✓ ${formatDuration(accumulated)} logged` : formatDuration(accumulated)}
                   </span>
                 ` : ""}
                 ${!isCompleted ? `
-                  <button type="button" class="start-timer-btn px-2.5 py-1 rounded-xl text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors flex items-center gap-1" data-id="${task.id}" aria-label="Start stopwatch for ${escapeHtml(task.title)}">
-                    ▶ Start
+                  <button type="button" class="start-timer-btn px-2.5 py-1 rounded-xl text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200 dark:border-emerald-800 transition-colors flex items-center gap-1" data-id="${task.id}" aria-label="Start stopwatch for ${escapeHtml(task.title)}">
+                    <span class="material-symbols-outlined text-sm">play_arrow</span>
+                    Start
                   </button>
                 ` : ""}
               `}
             </div>
           ` : `
             ${isCompleted ? `
-              <span class="text-[11px] text-emerald-700 bg-mint-bg/80 px-2 py-0.5 rounded-full font-medium">✓ Done</span>
+              <span class="text-[11px] text-emerald-700 dark:text-emerald-300 bg-mint-bg/80 dark:bg-emerald-950/80 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
+                <span class="material-symbols-outlined text-xs">check</span>
+                Done
+              </span>
             ` : ""}
           `}
 
           <!-- Reorder Handles (Up / Down) -->
           <div class="flex items-center opacity-40 group-hover:opacity-100 transition-opacity">
-            <button type="button" class="reorder-up-btn p-1 text-slate-400 hover:text-slate-700 rounded hover:bg-slate-100 disabled:opacity-20" data-id="${task.id}" data-index="${index}" ${index === 0 ? "disabled" : ""} aria-label="Move task up: ${escapeHtml(task.title)}">
-              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" /></svg>
+            <button type="button" class="reorder-up-btn p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-20" data-id="${task.id}" data-index="${index}" ${index === 0 ? "disabled" : ""} aria-label="Move task up: ${escapeHtml(task.title)}">
+              <span class="material-symbols-outlined text-sm">arrow_upward</span>
             </button>
-            <button type="button" class="reorder-down-btn p-1 text-slate-400 hover:text-slate-700 rounded hover:bg-slate-100 disabled:opacity-20" data-id="${task.id}" data-index="${index}" ${index === tasks.length - 1 ? "disabled" : ""} aria-label="Move task down: ${escapeHtml(task.title)}">
-              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+            <button type="button" class="reorder-down-btn p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-20" data-id="${task.id}" data-index="${index}" ${index === tasks.length - 1 ? "disabled" : ""} aria-label="Move task down: ${escapeHtml(task.title)}">
+              <span class="material-symbols-outlined text-sm">arrow_downward</span>
             </button>
           </div>
 
           <!-- Delete Task Button -->
-          <button type="button" class="delete-task-btn p-1 rounded-lg text-slate-300 hover:text-rose-600 hover:bg-rose-50 opacity-50 group-hover:opacity-100 transition-all" data-id="${task.id}" aria-label="Delete task: ${escapeHtml(task.title)}">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+          <button type="button" class="delete-task-btn p-1 rounded-lg text-slate-300 dark:text-slate-600 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 opacity-50 group-hover:opacity-100 transition-all" data-id="${task.id}" aria-label="Delete task: ${escapeHtml(task.title)}">
+            <span class="material-symbols-outlined text-base">delete</span>
           </button>
 
         </div>
@@ -456,7 +475,6 @@ function renderTasksList(container, uid, checklistId, tasks, options = {}) {
         if (isCompleted) {
           await uncompleteTask(uid, checklistId, taskId);
         } else {
-          // Complete with timer flow (auto-stop timer & log to timeLogs)
           await completeTaskWithTimer(uid, checklistId, taskId, {
             timerEnabled,
             categoryId,
