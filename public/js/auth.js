@@ -233,20 +233,28 @@ export async function updateUserProfile(profileData) {
 }
 
 /**
- * Check if the user has opted to use their Google photo
+ * Check if the user has opted to use their Google photo.
+ * Defaults to true if no explicit preference has been saved yet.
+ * 
+ * @param {string} uid 
+ * @returns {boolean}
  */
 export function getUseGooglePhotoPreference(uid) {
-  if (!uid) return false;
+  if (!uid) return true;
   const val = localStorage.getItem(`daylign_use_google_photo_${uid}`);
+  if (val === null) return true;
   return val === "true";
 }
 
 /**
  * Set user preference for using Google photo
+ * 
+ * @param {string} uid 
+ * @param {boolean} useGooglePhoto 
  */
 export function setUseGooglePhotoPreference(uid, useGooglePhoto) {
   if (!uid) return;
-  localStorage.setItem(`daylign_use_google_photo_${uid}`, String(useGooglePhoto));
+  localStorage.setItem(`daylign_use_google_photo_${uid}`, String(Boolean(useGooglePhoto)));
 }
 
 /**

@@ -345,14 +345,33 @@ function renderAuthView() {
 
   anonBtn?.addEventListener("click", async () => {
     anonBtn.disabled = true;
+    const originalText = anonBtn.innerHTML;
+    anonBtn.innerHTML = `<span class="material-symbols-outlined text-base animate-spin">progress_activity</span> Connecting...`;
+    
     try {
       await signInAnonymouslyUser();
       showToast("Signed in as Guest", "success");
       window.location.hash = "#/";
     } catch (err) {
-      showToast(err.message, "error");
+      console.warn("[Auth] Guest sign-in note:", err.code, err.message);
+      const isProviderDisabled = err.code === "auth/admin-restricted-operation" || 
+                                 err.code === "auth/operation-not-allowed" || 
+                                 (err.message && err.message.includes("not enabled"));
+      if (isProviderDisabled) {
+        const helpModal = document.getElementById("guest-help-modal");
+        const closeBtn = document.getElementById("guest-help-close-btn");
+        if (helpModal) {
+          closeBtn.onclick = () => helpModal.close();
+          helpModal.showModal();
+        } else {
+          showToast("Please enable 'Anonymous' in Firebase Console > Authentication > Sign-in method.", "error", 6000);
+        }
+      } else {
+        showToast(err.message || "Failed to sign in as guest", "error");
+      }
     } finally {
       anonBtn.disabled = false;
+      anonBtn.innerHTML = originalText;
     }
   });
 }
@@ -418,14 +437,14 @@ function updateUserUI(user) {
   const displayName = user.displayName || (isGuest ? "Guest" : (user.email ? user.email.split("@")[0] : "User"));
   const userInitial = displayName.charAt(0).toUpperCase();
 
-  // Check if user allowed Google photo
-  const useGooglePhoto = user.photoURL && (getUseGooglePhotoPreference(user.uid) || isGoogle);
+  // Strict check: Only show photo if user has a photoURL AND preference is enabled (not toggled off)
+  const useGooglePhoto = Boolean(user.photoURL) && getUseGooglePhotoPreference(user.uid);
   const isDark = getCurrentTheme() === "dark";
 
   userControls.innerHTML = `
     <!-- Circular Profile Button -->
     <button type="button" id="user-avatar-btn" class="relative group rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 p-0.5" aria-expanded="false" aria-haspopup="true" aria-label="Open user menu for ${escapeHtml(displayName)}">
-      <div class="w-9 h-9 rounded-full overflow-hidden border-2 border-slate-200 dark:border-slate-700 group-hover:border-indigo-400 dark:group-hover:border-indigo-400 transition-all flex items-center justify-center bg-lavender-bg dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 font-bold text-sm shadow-sm">
+      <div id="header-avatar-circle" class="w-9 h-9 rounded-full overflow-hidden border-2 border-slate-200 dark:border-slate-700 group-hover:border-indigo-400 dark:group-hover:border-indigo-400 transition-all flex items-center justify-center bg-lavender-bg dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 font-bold text-sm shadow-sm">
         ${
           useGooglePhoto
             ? `<img src="${user.photoURL}" alt="${escapeHtml(displayName)}" class="w-full h-full object-cover" referrerpolicy="no-referrer" />`
@@ -441,7 +460,7 @@ function updateUserUI(user) {
       
       <!-- User Info Header -->
       <div class="px-3 py-2.5 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3">
-        <div class="w-10 h-10 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700 flex items-center justify-center bg-lavender-bg dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 font-bold text-base flex-shrink-0">
+        <div id="dropdown-avatar-circle" class="w-10 h-10 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700 flex items-center justify-center bg-lavender-bg dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 font-bold text-base flex-shrink-0">
           ${
             useGooglePhoto
               ? `<img src="${user.photoURL}" alt="${escapeHtml(displayName)}" class="w-full h-full object-cover" referrerpolicy="no-referrer" />`
@@ -561,7 +580,7 @@ function openProfileModal(user) {
   const isGuest = user.isAnonymous;
   const isGoogle = user.providerData?.some((p) => p.providerId === "google.com") || Boolean(user.photoURL);
   const displayName = user.displayName || (isGuest ? "Guest User" : (user.email ? user.email.split("@")[0] : "User"));
-  const useGooglePhoto = user.photoURL && (getUseGooglePhotoPreference(user.uid) || isGoogle);
+  const useGooglePhoto = Boolean(user.photoURL) && getUseGooglePhotoPreference(user.uid);
 
   const avatarContainer = document.getElementById("profile-modal-avatar-container");
   const nameEl = document.getElementById("profile-modal-name");
@@ -574,17 +593,20 @@ function openProfileModal(user) {
   const doneBtn = document.getElementById("profile-modal-done-btn");
   const closeBtn = document.getElementById("profile-modal-close-btn");
 
-  if (avatarContainer) {
+  const renderModalAvatar = (showPhoto) => {
+    if (!avatarContainer) return;
     avatarContainer.innerHTML = `
       <div class="w-14 h-14 rounded-full overflow-hidden border-2 border-indigo-200 dark:border-indigo-800 flex items-center justify-center bg-lavender-bg dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 font-bold text-xl shadow-sm">
         ${
-          useGooglePhoto
+          showPhoto && user.photoURL
             ? `<img src="${user.photoURL}" alt="${escapeHtml(displayName)}" class="w-full h-full object-cover" referrerpolicy="no-referrer" />`
             : `<span>${displayName.charAt(0).toUpperCase()}</span>`
         }
       </div>
     `;
-  }
+  };
+
+  renderModalAvatar(useGooglePhoto);
 
   if (nameEl) nameEl.textContent = displayName;
   if (emailEl) emailEl.textContent = user.email || (isGuest ? "Temporary Guest Session" : "No email linked");
@@ -597,9 +619,11 @@ function openProfileModal(user) {
     if (googlePhotoToggle) {
       googlePhotoToggle.checked = getUseGooglePhotoPreference(user.uid);
       googlePhotoToggle.onchange = () => {
-        setUseGooglePhotoPreference(user.uid, googlePhotoToggle.checked);
+        const isChecked = googlePhotoToggle.checked;
+        setUseGooglePhotoPreference(user.uid, isChecked);
+        renderModalAvatar(isChecked);
         updateUserUI(user);
-        openProfileModal(user); // refresh avatar in modal
+        showToast(isChecked ? "Google profile photo enabled" : "Google profile photo hidden (using initials)", "info");
       };
     }
   } else if (googlePhotoRow) {
