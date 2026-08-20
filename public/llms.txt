@@ -1,0 +1,21 @@
+# Daylign
+> A serene, lightweight personal learning, habit, and activity tracker with configurable reset cadences, timers, and analytics.
+
+## About
+Daylign is a calm productivity tool for tracking habits, daily activities, and time spent on tasks. It features:
+- Configurable daily/permanent checklist reset modes
+- Built-in stopwatch timer for task duration tracking
+- 7-day and 30-day analytics visualization
+- Sticky notes for quick thoughts and reminders
+- Organized categories with pastel color themes
+- Real-time sync across devices via Cloud Firestore
+
+## Tech Stack
+- Frontend: Vanilla JavaScript SPA with Firebase JS SDK v10
+- Backend: Firebase Cloud Functions (Express REST API)
+- Database: Cloud Firestore with offline persistence
+- Auth: Firebase Authentication (Google, Email, Anonymous)
+- Hosting: Firebase Hosting
+
+## URL
+https://daylign-22030.web.app

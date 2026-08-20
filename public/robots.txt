@@ -1,0 +1,5 @@
+# Daylign Robots.txt
+User-agent: *
+Allow: /
+
+Sitemap: https://daylign-22030.web.app/sitemap.xml
