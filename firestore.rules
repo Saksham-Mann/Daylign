@@ -43,6 +43,11 @@ service cloud.firestore {
         // Explicitly disallow update and delete to preserve audit trail integrity
         allow update, delete: if false;
       }
+
+      // Notes collection: full CRUD by owner
+      match /notes/{noteId} {
+        allow read, write: if isOwner(uid);
+      }
     }
 
     // Implicit deny for all other top-level paths

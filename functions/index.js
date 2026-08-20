@@ -29,14 +29,25 @@ const ALLOWED_ORIGINS = [
 app.use(cors({ origin: ALLOWED_ORIGINS }));
 app.use(express.json());
 
-// Rate limiting: max 100 requests per minute per IP (MEDIUM-03)
-app.use(rateLimit({
+// Rate limiting: max 100 read requests per minute per IP (MEDIUM-03)
+const readLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 100,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: "Too Many Requests", message: "Rate limit exceeded. Please try again later." }
-}));
+});
+
+// Stricter rate limiter for mutation routes: 30 writes per minute per IP
+const mutationLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too Many Requests", message: "Write rate limit exceeded. Please slow down." }
+});
+
+app.use(readLimiter);
 
 /* ==========================================================================
    AUTHENTICATION MIDDLEWARE
@@ -115,7 +126,7 @@ app.get("/api/categories", async (req, res) => {
     return res.json({ categories });
   } catch (error) {
     console.error("[Categories:GET] Error fetching categories:", error);
-    return res.status(500).json({ error: "Failed to fetch categories", message: error.message });
+    return res.status(500).json({ error: "Internal Server Error", message: "Failed to fetch categories. Please try again." });
   }
 });
 
@@ -123,7 +134,7 @@ app.get("/api/categories", async (req, res) => {
  * POST /api/categories
  * Creates a new category for the authenticated user.
  */
-app.post("/api/categories", async (req, res) => {
+app.post("/api/categories", mutationLimiter, async (req, res) => {
   try {
     const { name, colorToken, icon, order } = req.body;
     if (!name || typeof name !== "string" || !name.trim()) {
@@ -155,7 +166,7 @@ app.post("/api/categories", async (req, res) => {
     });
   } catch (error) {
     console.error("[Categories:POST] Error creating category:", error);
-    return res.status(500).json({ error: "Failed to create category", message: error.message });
+    return res.status(500).json({ error: "Internal Server Error", message: "Failed to create category. Please try again." });
   }
 });
 
@@ -163,7 +174,7 @@ app.post("/api/categories", async (req, res) => {
  * PATCH /api/categories/:id
  * Updates an existing category's properties.
  */
-app.patch("/api/categories/:id", async (req, res) => {
+app.patch("/api/categories/:id", mutationLimiter, async (req, res) => {
   try {
     const { id } = req.params;
     const { name, colorToken, icon, order } = req.body;
@@ -197,7 +208,7 @@ app.patch("/api/categories/:id", async (req, res) => {
     return res.json({ id, ...snap.data(), ...updates });
   } catch (error) {
     console.error("[Categories:PATCH] Error updating category:", error);
-    return res.status(500).json({ error: "Failed to update category", message: error.message });
+    return res.status(500).json({ error: "Internal Server Error", message: "Failed to update category. Please try again." });
   }
 });
 
@@ -205,7 +216,7 @@ app.patch("/api/categories/:id", async (req, res) => {
  * DELETE /api/categories/:id
  * Cascade-deletes a category, all checklists under it, and all task subcollections.
  */
-app.delete("/api/categories/:id", async (req, res) => {
+app.delete("/api/categories/:id", mutationLimiter, async (req, res) => {
   try {
     const { id } = req.params;
     const uid = req.user.uid;
@@ -249,7 +260,7 @@ app.delete("/api/categories/:id", async (req, res) => {
     return res.json({ success: true, message: `Category ${id} and all child checklists deleted.` });
   } catch (error) {
     console.error("[Categories:DELETE] Error deleting category:", error);
-    return res.status(500).json({ error: "Failed to delete category", message: error.message });
+    return res.status(500).json({ error: "Internal Server Error", message: "Failed to delete category. Please try again." });
   }
 });
 
@@ -280,7 +291,7 @@ app.get("/api/checklists", async (req, res) => {
     return res.json({ checklists });
   } catch (error) {
     console.error("[Checklists:GET] Error fetching checklists:", error);
-    return res.status(500).json({ error: "Failed to fetch checklists", message: error.message });
+    return res.status(500).json({ error: "Internal Server Error", message: "Failed to fetch checklists. Please try again." });
   }
 });
 
@@ -312,7 +323,7 @@ app.get("/api/checklists/:id", async (req, res) => {
     return res.json({ checklist: checklistData, category: categoryData });
   } catch (error) {
     console.error("[Checklists:GET/:id] Error fetching checklist:", error);
-    return res.status(500).json({ error: "Failed to fetch checklist", message: error.message });
+    return res.status(500).json({ error: "Internal Server Error", message: "Failed to fetch checklist. Please try again." });
   }
 });
 
@@ -320,7 +331,7 @@ app.get("/api/checklists/:id", async (req, res) => {
  * POST /api/checklists
  * Creates a new checklist and optional initial tasks.
  */
-app.post("/api/checklists", async (req, res) => {
+app.post("/api/checklists", mutationLimiter, async (req, res) => {
   try {
     const uid = req.user.uid;
     const { categoryId, name, settings, initialTasks, order } = req.body;
@@ -396,7 +407,7 @@ app.post("/api/checklists", async (req, res) => {
     });
   } catch (error) {
     console.error("[Checklists:POST] Error creating checklist:", error);
-    return res.status(500).json({ error: "Failed to create checklist", message: error.message });
+    return res.status(500).json({ error: "Internal Server Error", message: "Failed to create checklist. Please try again." });
   }
 });
 
@@ -404,7 +415,7 @@ app.post("/api/checklists", async (req, res) => {
  * PATCH /api/checklists/:id
  * Updates checklist settings/name. Handles timer auto-stop edge case when timerEnabled -> false.
  */
-app.patch("/api/checklists/:id", async (req, res) => {
+app.patch("/api/checklists/:id", mutationLimiter, async (req, res) => {
   try {
     const { id } = req.params;
     const uid = req.user.uid;
@@ -465,7 +476,7 @@ app.patch("/api/checklists/:id", async (req, res) => {
     return res.json({ id, ...currentData, ...updates });
   } catch (error) {
     console.error("[Checklists:PATCH] Error updating checklist:", error);
-    return res.status(500).json({ error: "Failed to update checklist", message: error.message });
+    return res.status(500).json({ error: "Internal Server Error", message: "Failed to update checklist. Please try again." });
   }
 });
 
@@ -473,7 +484,7 @@ app.patch("/api/checklists/:id", async (req, res) => {
  * DELETE /api/checklists/:id
  * Cascade-deletes a checklist and its subcollection tasks. Decrements category count.
  */
-app.delete("/api/checklists/:id", async (req, res) => {
+app.delete("/api/checklists/:id", mutationLimiter, async (req, res) => {
   try {
     const { id } = req.params;
     const uid = req.user.uid;
@@ -505,7 +516,7 @@ app.delete("/api/checklists/:id", async (req, res) => {
     return res.json({ success: true, message: `Checklist ${id} and all tasks deleted.` });
   } catch (error) {
     console.error("[Checklists:DELETE] Error deleting checklist:", error);
-    return res.status(500).json({ error: "Failed to delete checklist", message: error.message });
+    return res.status(500).json({ error: "Internal Server Error", message: "Failed to delete checklist. Please try again." });
   }
 });
 
@@ -532,7 +543,7 @@ app.get("/api/checklists/:id/tasks", async (req, res) => {
     return res.json({ tasks });
   } catch (error) {
     console.error("[Tasks:GET] Error fetching tasks:", error);
-    return res.status(500).json({ error: "Failed to fetch tasks", message: error.message });
+    return res.status(500).json({ error: "Internal Server Error", message: "Failed to fetch tasks. Please try again." });
   }
 });
 
@@ -540,7 +551,7 @@ app.get("/api/checklists/:id/tasks", async (req, res) => {
  * POST /api/checklists/:id/tasks
  * Adds a new task to the checklist and atomically increments taskCount.
  */
-app.post("/api/checklists/:id/tasks", async (req, res) => {
+app.post("/api/checklists/:id/tasks", mutationLimiter, async (req, res) => {
   try {
     const { id } = req.params;
     const uid = req.user.uid;
@@ -584,7 +595,7 @@ app.post("/api/checklists/:id/tasks", async (req, res) => {
     return res.status(201).json({ id: taskRef.id, ...taskData });
   } catch (error) {
     console.error("[Tasks:POST] Error creating task:", error);
-    return res.status(500).json({ error: "Failed to create task", message: error.message });
+    return res.status(500).json({ error: "Internal Server Error", message: "Failed to create task. Please try again." });
   }
 });
 
@@ -592,7 +603,7 @@ app.post("/api/checklists/:id/tasks", async (req, res) => {
  * PATCH /api/checklists/:id/tasks/:taskId
  * Updates task fields (rename, start stopwatch, pause stopwatch, uncomplete).
  */
-app.patch("/api/checklists/:id/tasks/:taskId", async (req, res) => {
+app.patch("/api/checklists/:id/tasks/:taskId", mutationLimiter, async (req, res) => {
   try {
     const { id, taskId } = req.params;
     const uid = req.user.uid;
@@ -644,7 +655,7 @@ app.patch("/api/checklists/:id/tasks/:taskId", async (req, res) => {
     return res.json({ id: taskId, ...currentTask, ...updates });
   } catch (error) {
     console.error("[Tasks:PATCH] Error updating task:", error);
-    return res.status(500).json({ error: "Failed to update task", message: error.message });
+    return res.status(500).json({ error: "Internal Server Error", message: "Failed to update task. Please try again." });
   }
 });
 
@@ -652,7 +663,7 @@ app.patch("/api/checklists/:id/tasks/:taskId", async (req, res) => {
  * DELETE /api/checklists/:id/tasks/:taskId
  * Deletes a single task and decrements checklist counters.
  */
-app.delete("/api/checklists/:id/tasks/:taskId", async (req, res) => {
+app.delete("/api/checklists/:id/tasks/:taskId", mutationLimiter, async (req, res) => {
   try {
     const { id, taskId } = req.params;
     const uid = req.user.uid;
@@ -684,7 +695,7 @@ app.delete("/api/checklists/:id/tasks/:taskId", async (req, res) => {
     return res.json({ success: true, message: `Task ${taskId} deleted.` });
   } catch (error) {
     console.error("[Tasks:DELETE] Error deleting task:", error);
-    return res.status(500).json({ error: "Failed to delete task", message: error.message });
+    return res.status(500).json({ error: "Internal Server Error", message: "Failed to delete task. Please try again." });
   }
 });
 
@@ -692,7 +703,7 @@ app.delete("/api/checklists/:id/tasks/:taskId", async (req, res) => {
  * POST /api/checklists/:id/tasks/reorder
  * Batch updates order fields for an array of tasks [{ id, order }].
  */
-app.post("/api/checklists/:id/tasks/reorder", async (req, res) => {
+app.post("/api/checklists/:id/tasks/reorder", mutationLimiter, async (req, res) => {
   try {
     const { id } = req.params;
     const uid = req.user.uid;
@@ -714,7 +725,7 @@ app.post("/api/checklists/:id/tasks/reorder", async (req, res) => {
     return res.json({ success: true, updatedCount: items.length });
   } catch (error) {
     console.error("[Tasks:REORDER] Error reordering tasks:", error);
-    return res.status(500).json({ error: "Failed to reorder tasks", message: error.message });
+    return res.status(500).json({ error: "Internal Server Error", message: "Failed to reorder tasks. Please try again." });
   }
 });
 
@@ -730,7 +741,7 @@ app.post("/api/checklists/:id/tasks/reorder", async (req, res) => {
  *   - Atomically increments checklist completedCount
  *   - Writes append-only record to users/{uid}/timeLogs
  */
-app.post("/api/timer/complete", async (req, res) => {
+app.post("/api/timer/complete", mutationLimiter, async (req, res) => {
   try {
     const uid = req.user.uid;
     const { checklistId, taskId, categoryId, timerEnabled } = req.body;
@@ -799,7 +810,7 @@ app.post("/api/timer/complete", async (req, res) => {
     });
   } catch (error) {
     console.error("[Timer:COMPLETE] Error completing task with timer:", error);
-    return res.status(500).json({ error: "Failed to complete task", message: error.message });
+    return res.status(500).json({ error: "Internal Server Error", message: "Failed to complete task. Please try again." });
   }
 });
 
@@ -902,7 +913,7 @@ app.get("/api/analytics", async (req, res) => {
     });
   } catch (error) {
     console.error("[Analytics:GET] Error generating analytics:", error);
-    return res.status(500).json({ error: "Failed to generate analytics", message: error.message });
+    return res.status(500).json({ error: "Internal Server Error", message: "Failed to load analytics. Please try again." });
   }
 });
 
@@ -914,7 +925,7 @@ app.get("/api/analytics", async (req, res) => {
  * POST /api/engine/reset
  * Evaluates and executes the transactional midnight reset across all daily checklists for the user.
  */
-app.post("/api/engine/reset", async (req, res) => {
+app.post("/api/engine/reset", mutationLimiter, async (req, res) => {
   try {
     const uid = req.user.uid;
     const now = new Date();
@@ -999,7 +1010,7 @@ app.post("/api/engine/reset", async (req, res) => {
     });
   } catch (error) {
     console.error("[ResetEngine:POST] Error running reset engine:", error);
-    return res.status(500).json({ error: "Failed to run reset engine", message: error.message });
+    return res.status(500).json({ error: "Internal Server Error", message: "Failed to run reset engine. Please try again." });
   }
 });
 
