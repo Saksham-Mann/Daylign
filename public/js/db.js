@@ -61,6 +61,7 @@ export const getCategoriesCol = (uid) => collection(db, "users", uid, "categorie
 export const getChecklistsCol = (uid) => collection(db, "users", uid, "checklists");
 export const getTasksCol = (uid, checklistId) => collection(db, "users", uid, "checklists", checklistId, "tasks");
 export const getTimeLogsCol = (uid) => collection(db, "users", uid, "timeLogs");
+export const getNotesCol = (uid) => collection(db, "users", uid, "notes");
 
 /* ==========================================================================
    LOCAL DATE & TIME HELPERS
@@ -122,7 +123,7 @@ export async function getCategory(uid, categoryId) {
   return snap.exists() ? { id: snap.id, ...snap.data() } : null;
 }
 
-export function subscribeCategories(uid, callback) {
+export function subscribeCategories(uid, callback, onError) {
   if (!uid) return () => {};
   const q = query(getCategoriesCol(uid), orderBy("order", "asc"));
   return onSnapshot(q, (snapshot) => {
@@ -130,6 +131,7 @@ export function subscribeCategories(uid, callback) {
     if (typeof callback === "function") callback(categories);
   }, (err) => {
     console.warn("[DB:subscribeCategories] Error:", err.message);
+    if (typeof onError === "function") onError(err);
   });
 }
 
@@ -257,7 +259,7 @@ export async function getChecklist(uid, checklistId) {
   return snap.exists() ? { id: snap.id, ...snap.data() } : null;
 }
 
-export function subscribeChecklists(uid, categoryId, callback) {
+export function subscribeChecklists(uid, categoryId, callback, onError) {
   if (!uid) return () => {};
   let q = getChecklistsCol(uid);
   if (categoryId) {
@@ -270,6 +272,7 @@ export function subscribeChecklists(uid, categoryId, callback) {
     if (typeof callback === "function") callback(checklists);
   }, (err) => {
     console.warn("[DB:subscribeChecklists] Error:", err.message);
+    if (typeof onError === "function") onError(err);
   });
 }
 
@@ -279,9 +282,10 @@ export function subscribeChecklists(uid, categoryId, callback) {
  *
  * @param {string} uid - User ID
  * @param {(checklists: Array) => void} callback - Snapshot callback
+ * @param {(err: Error) => void} onError - Optional error callback
  * @returns {() => void} Unsubscribe function
  */
-export function subscribeAllChecklists(uid, callback) {
+export function subscribeAllChecklists(uid, callback, onError) {
   if (!uid) return () => {};
   const q = query(getChecklistsCol(uid), orderBy("order", "asc"));
   return onSnapshot(q, (snapshot) => {
@@ -289,6 +293,7 @@ export function subscribeAllChecklists(uid, callback) {
     if (typeof callback === "function") callback(checklists);
   }, (err) => {
     console.warn("[DB:subscribeAllChecklists] Error:", err.message);
+    if (typeof onError === "function") onError(err);
   });
 }
 
@@ -344,7 +349,7 @@ export async function deleteChecklist(uid, checklistId) {
    3. TASK CRUD OPERATIONS (Schema.md §5)
    ========================================================================== */
 
-export function subscribeTasks(uid, checklistId, callback) {
+export function subscribeTasks(uid, checklistId, callback, onError) {
   if (!uid || !checklistId) return () => {};
   const q = query(getTasksCol(uid, checklistId), orderBy("order", "asc"));
   return onSnapshot(q, (snapshot) => {
@@ -352,6 +357,7 @@ export function subscribeTasks(uid, checklistId, callback) {
     if (typeof callback === "function") callback(tasks);
   }, (err) => {
     console.warn("[DB:subscribeTasks] Error:", err.message);
+    if (typeof onError === "function") onError(err);
   });
 }
 
@@ -712,6 +718,174 @@ export async function runDailyResetCheck(uid) {
   }
 }
 
+/* ==========================================================================
+   6. STICKY NOTES CRUD OPERATIONS
+   ========================================================================== */
+
+/**
+ * Subscribe to real-time updates of user sticky notes.
+ * 
+ * @param {string} uid - User ID
+ * @param {(notes: Array) => void} callback - Snapshot callback
+ * @returns {() => void} Unsubscribe function
+ */
+export function subscribeNotes(uid, callback, onError) {
+  if (!uid) return () => {};
+  const q = query(getNotesCol(uid), orderBy("createdAt", "desc"));
+  return onSnapshot(q, (snapshot) => {
+    const notes = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+    if (typeof callback === "function") callback(notes);
+  }, (err) => {
+    console.warn("[DB:subscribeNotes] Error:", err.message);
+    if (typeof onError === "function") onError(err);
+  });
+}
+
+/**
+ * Fetch all sticky notes for a user
+ */
+export async function getNotes(uid) {
+  if (!uid) return [];
+  const q = query(getNotesCol(uid), orderBy("createdAt", "desc"));
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+
+/**
+ * Create a new sticky note
+ */
+export async function createNote(uid, data) {
+  if (!uid) throw new Error("User ID is required.");
+  if (!data.content?.trim() && !data.title?.trim()) {
+    throw new Error("Note content or title is required.");
+  }
+
+  const noteData = {
+    title: (data.title || "").trim(),
+    content: (data.content || "").trim(),
+    colorToken: data.colorToken || "butter",
+    isImportant: Boolean(data.isImportant),
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp()
+  };
+
+  const docRef = await addDoc(getNotesCol(uid), noteData);
+  return { id: docRef.id, ...noteData };
+}
+
+/**
+ * Update an existing sticky note
+ */
+export async function updateNote(uid, noteId, updates) {
+  if (!uid || !noteId) throw new Error("Missing parameters.");
+  const noteRef = doc(db, "users", uid, "notes", noteId);
+  const payload = {
+    ...updates,
+    updatedAt: serverTimestamp()
+  };
+  await updateDoc(noteRef, payload);
+  return { id: noteId, ...payload };
+}
+
+/**
+ * Delete a sticky note
+ */
+export async function deleteNote(uid, noteId) {
+  if (!uid || !noteId) throw new Error("Missing parameters.");
+  const noteRef = doc(db, "users", uid, "notes", noteId);
+  await deleteDoc(noteRef);
+  return { id: noteId, success: true };
+}
+
+/**
+ * Toggle important / pinned status of a note
+ */
+export async function toggleNoteImportant(uid, noteId, isImportant) {
+  return await updateNote(uid, noteId, { isImportant: Boolean(isImportant) });
+}
+
+/* ==========================================================================
+   7. RUNNING TIMERS AGGREGATOR FOR HOMESCREEN
+   ========================================================================== */
+
+/**
+ * Real-time subscription that monitors all active/running task timers across all user checklists.
+ * Automatically handles dynamic additions/removals of checklists and tasks.
+ * 
+ * @param {string} uid - User ID
+ * @param {(runningTasks: Array<{ task: Object, checklist: Object, category: Object|null }>) => void} callback
+ * @returns {() => void} Cleanup function
+ */
+export function subscribeRunningTasks(uid, callback) {
+  if (!uid) return () => {};
+
+  let checklistUnsubs = new Map();
+  let taskCache = new Map(); // checklistId -> tasks array
+  let checklistCache = new Map(); // checklistId -> checklist doc
+  let categoryCache = new Map(); // categoryId -> category doc
+
+  // Fetch categories once for fast decoration
+  getCategories(uid).then((cats) => {
+    cats.forEach((c) => categoryCache.set(c.id, c));
+  }).catch(() => {});
+
+  const emitRunning = () => {
+    const running = [];
+    taskCache.forEach((tasks, checklistId) => {
+      const checklist = checklistCache.get(checklistId);
+      const category = checklist?.categoryId ? categoryCache.get(checklist.categoryId) : null;
+      tasks.forEach((task) => {
+        if (task.startedAt && !task.isCompleted) {
+          running.push({
+            task,
+            checklist: checklist || { id: checklistId, name: "Checklist" },
+            category: category || null
+          });
+        }
+      });
+    });
+    if (typeof callback === "function") {
+      callback(running);
+    }
+  };
+
+  const unsubChecklists = subscribeAllChecklists(uid, (checklists) => {
+    const activeIds = new Set(checklists.map((c) => c.id));
+    checklists.forEach((c) => checklistCache.set(c.id, c));
+
+    // Cleanup deleted checklists
+    checklistUnsubs.forEach((unsub, chId) => {
+      if (!activeIds.has(chId)) {
+        unsub();
+        checklistUnsubs.delete(chId);
+        taskCache.delete(chId);
+        checklistCache.delete(chId);
+      }
+    });
+
+    // Subscribe to tasks for each checklist
+    checklists.forEach((checklist) => {
+      if (!checklistUnsubs.has(checklist.id)) {
+        const unsubTask = subscribeTasks(uid, checklist.id, (tasks) => {
+          taskCache.set(checklist.id, tasks);
+          emitRunning();
+        });
+        checklistUnsubs.set(checklist.id, unsubTask);
+      }
+    });
+
+    emitRunning();
+  });
+
+  return () => {
+    unsubChecklists();
+    checklistUnsubs.forEach((unsub) => unsub());
+    checklistUnsubs.clear();
+    taskCache.clear();
+    checklistCache.clear();
+  };
+}
+
 export default {
   db,
   getLocalDateString,
@@ -739,5 +913,12 @@ export default {
   uncompleteTask,
   stopAllRunningTimersInChecklist,
   getTimeLogsForRange,
-  runDailyResetCheck
+  runDailyResetCheck,
+  getNotes,
+  subscribeNotes,
+  createNote,
+  updateNote,
+  deleteNote,
+  toggleNoteImportant,
+  subscribeRunningTasks
 };

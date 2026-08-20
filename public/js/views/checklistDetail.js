@@ -36,6 +36,7 @@ import {
   openChecklistSettingsModal,
   showConfirmModal
 } from "../modals.js";
+import { renderSectionError } from "./errorStates.js";
 
 // Pastel token styling mapping
 const COLOR_SCHEMES = {
@@ -62,6 +63,42 @@ const COLOR_SCHEMES = {
     text: "text-amber-700 dark:text-amber-300",
     accent: "bg-butter-accent",
     hex: "#FBBF24"
+  },
+  sky: {
+    bg: "bg-sky-bg dark:bg-sky-950/60",
+    text: "text-sky-600 dark:text-sky-300",
+    accent: "bg-sky-accent",
+    hex: "#38BDF8"
+  },
+  violet: {
+    bg: "bg-violet-bg dark:bg-purple-950/60",
+    text: "text-purple-600 dark:text-purple-300",
+    accent: "bg-violet-accent",
+    hex: "#A855F7"
+  },
+  coral: {
+    bg: "bg-coral-bg dark:bg-orange-950/60",
+    text: "text-orange-600 dark:text-orange-300",
+    accent: "bg-coral-accent",
+    hex: "#FB923C"
+  },
+  teal: {
+    bg: "bg-teal-bg dark:bg-teal-950/60",
+    text: "text-teal-600 dark:text-teal-300",
+    accent: "bg-teal-accent",
+    hex: "#2DD4BF"
+  },
+  sage: {
+    bg: "bg-sage-bg dark:bg-lime-950/60",
+    text: "text-lime-700 dark:text-lime-300",
+    accent: "bg-sage-accent",
+    hex: "#84CC16"
+  },
+  slate: {
+    bg: "bg-slate-bg dark:bg-slate-900/60",
+    text: "text-slate-600 dark:text-slate-300",
+    accent: "bg-slate-accent",
+    hex: "#94A3B8"
   }
 };
 
@@ -101,10 +138,16 @@ export async function renderChecklistDetail(container, uid, checklistId, setBrea
   }
 
   if (!checklist) {
-    if (typeof window.showToast === "function") {
-      window.showToast("Checklist not found", "error");
+    if (typeof setBreadcrumbs === "function") {
+      setBreadcrumbs([{ label: "Checklist Not Found" }]);
     }
-    window.location.hash = "#/";
+    renderSectionError(container, {
+      title: "Checklist Not Found",
+      message: "The checklist you're looking for doesn't exist, was deleted, or you may not have permission to view it.",
+      icon: "assignment_late",
+      retryFn: () => { window.location.hash = "#/activities"; },
+      retryLabel: "Back to Activities"
+    });
     return () => {};
   }
 
@@ -321,6 +364,19 @@ export async function renderChecklistDetail(container, uid, checklistId, setBrea
       }
     });
     refreshAnalytics();
+  }, (err) => {
+    console.error("[ChecklistDetail] Tasks subscription error:", err);
+    const listContainer = container.querySelector("#tasks-list-container");
+    if (listContainer) {
+      renderSectionError(listContainer, {
+        title: "Could not load tasks",
+        message: "An error occurred while syncing tasks. Please check your network connection.",
+        icon: "cloud_off",
+        retryFn: () => {
+          window.location.reload();
+        }
+      });
+    }
   });
 
   return () => {

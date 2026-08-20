@@ -16,6 +16,7 @@ import {
   openChecklistSettingsModal,
   showConfirmModal
 } from "../modals.js";
+import { renderSectionError } from "./errorStates.js";
 
 // Pastel token mapping
 const COLOR_SCHEMES = {
@@ -42,6 +43,42 @@ const COLOR_SCHEMES = {
     text: "text-amber-700 dark:text-amber-300",
     accent: "bg-butter-accent",
     border: "border-amber-200 dark:border-amber-900/60"
+  },
+  sky: {
+    bg: "bg-sky-bg dark:bg-sky-950/60",
+    text: "text-sky-600 dark:text-sky-300",
+    accent: "bg-sky-accent",
+    border: "border-sky-200 dark:border-sky-900/60"
+  },
+  violet: {
+    bg: "bg-violet-bg dark:bg-purple-950/60",
+    text: "text-purple-600 dark:text-purple-300",
+    accent: "bg-violet-accent",
+    border: "border-purple-200 dark:border-purple-900/60"
+  },
+  coral: {
+    bg: "bg-coral-bg dark:bg-orange-950/60",
+    text: "text-orange-600 dark:text-orange-300",
+    accent: "bg-coral-accent",
+    border: "border-orange-200 dark:border-orange-900/60"
+  },
+  teal: {
+    bg: "bg-teal-bg dark:bg-teal-950/60",
+    text: "text-teal-600 dark:text-teal-300",
+    accent: "bg-teal-accent",
+    border: "border-teal-200 dark:border-teal-900/60"
+  },
+  sage: {
+    bg: "bg-sage-bg dark:bg-lime-950/60",
+    text: "text-lime-700 dark:text-lime-300",
+    accent: "bg-sage-accent",
+    border: "border-lime-200 dark:border-lime-900/60"
+  },
+  slate: {
+    bg: "bg-slate-bg dark:bg-slate-900/60",
+    text: "text-slate-600 dark:text-slate-300",
+    accent: "bg-slate-accent",
+    border: "border-slate-300 dark:border-slate-700"
   }
 };
 
@@ -59,7 +96,7 @@ function getIconSymbol(iconKey) {
     "fitness": "fitness_center",
     "code": "code"
   };
-  const iconName = map[iconKey] || "folder";
+  const iconName = map[iconKey] || "category";
   return `<span class="material-symbols-outlined text-2xl">${iconName}</span>`;
 }
 
@@ -95,10 +132,16 @@ export async function renderCategoryDetail(container, uid, categoryId, setBreadc
   }
 
   if (!category) {
-    if (typeof window.showToast === "function") {
-      window.showToast("Category not found", "error");
+    if (typeof setBreadcrumbs === "function") {
+      setBreadcrumbs([{ label: "Category Not Found" }]);
     }
-    window.location.hash = "#/";
+    renderSectionError(container, {
+      title: "Category Not Found",
+      message: "The activity category you're looking for doesn't exist, was deleted, or you may not have permission to view it.",
+      icon: "folder_off",
+      retryFn: () => { window.location.hash = "#/activities"; },
+      retryLabel: "Back to Activities"
+    });
     return () => {};
   }
 
@@ -178,19 +221,10 @@ export async function renderCategoryDetail(container, uid, categoryId, setBreadc
           </div>
           <h2 class="text-base font-bold text-slate-800 dark:text-slate-100">No checklists in this activity yet</h2>
           <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto leading-relaxed">
-            Create a daily recurring habit checklist or a permanent task list to get started.
+            Click <strong>+ New Checklist</strong> above to create a daily recurring habit checklist or a permanent task list.
           </p>
-          <button type="button" id="empty-create-checklist-btn" class="mt-4 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white text-xs font-semibold shadow-sm transition-all flex items-center gap-1.5 mx-auto">
-            <span class="material-symbols-outlined text-base">add</span>
-            Create Checklist
-          </button>
         </article>
       `;
-      grid.querySelector("#empty-create-checklist-btn")?.addEventListener("click", () => {
-        openChecklistModal(uid, categoryId, (newId) => {
-          window.location.hash = `#/checklist/${newId}`;
-        });
-      });
       return;
     }
 
@@ -319,6 +353,19 @@ export async function renderCategoryDetail(container, uid, categoryId, setBreadc
   const unsub = subscribeChecklists(uid, categoryId, (items) => {
     checklists = items;
     updateUI();
+  }, (err) => {
+    console.error("[CategoryDetail] Checklist subscription error:", err);
+    const grid = container.querySelector("#checklists-grid");
+    if (grid) {
+      renderSectionError(grid, {
+        title: "Could not load checklists",
+        message: "An error occurred while syncing your checklists. Please check your connection.",
+        icon: "cloud_off",
+        retryFn: () => {
+          window.location.reload();
+        }
+      });
+    }
   });
 
   return () => {

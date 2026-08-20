@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="404 — Page Not Found | Daylign" />
-  <title>404 — Page Not Found | Daylign</title>
+  <meta name="description" content="403 — Access Denied | Daylign" />
+  <title>403 — Access Denied | Daylign</title>
 
   <!-- Favicon -->
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23E0E7FF'/%3E%3Cpath d='M10 16l4 4 8-8' stroke='%23818CF8' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E" />
@@ -35,17 +35,8 @@
           colors: {
             canvas: { DEFAULT: '#FAFAF9', dark: '#0B0F19' },
             surface: { DEFAULT: '#FFFFFF', dark: '#131B2E' },
-            lavender: {
-              DEFAULT: '#818CF8',
-              bg: '#E0E7FF',
-              accent: '#818CF8',
-              hover: '#6366F1'
-            },
-            mint: {
-              DEFAULT: '#34D399',
-              bg: '#D1FAE5',
-              accent: '#34D399'
-            }
+            lavender: { DEFAULT: '#818CF8', bg: '#E0E7FF', accent: '#818CF8', hover: '#6366F1' },
+            peach: { DEFAULT: '#FB7185', bg: '#FFE4E6', accent: '#FB7185' }
           },
           fontFamily: {
             sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif']
@@ -60,42 +51,44 @@
 </head>
 <body class="h-full flex flex-col items-center justify-center p-6 text-slate-800 dark:text-slate-200 font-sans antialiased bg-[#FAFAF9] dark:bg-[#0B0F19] selection:bg-lavender-bg selection:text-indigo-900 transition-colors">
 
-  <!-- 404 Card Container -->
+  <!-- 403 Card Container -->
   <main class="w-full max-w-md bg-white dark:bg-[#131B2E] p-8 sm:p-10 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm text-center relative overflow-hidden">
     
-    <!-- Top Decorative Glow -->
-    <div class="absolute -top-12 -right-12 w-32 h-32 bg-lavender-bg dark:bg-indigo-950/40 rounded-full blur-2xl opacity-60 pointer-events-none" aria-hidden="true"></div>
-    <div class="absolute -bottom-12 -left-12 w-32 h-32 bg-mint-bg dark:bg-emerald-950/40 rounded-full blur-2xl opacity-60 pointer-events-none" aria-hidden="true"></div>
+    <!-- Decorative Glows -->
+    <div class="absolute -top-12 -right-12 w-32 h-32 bg-peach-bg dark:bg-rose-950/40 rounded-full blur-2xl opacity-60 pointer-events-none" aria-hidden="true"></div>
+    <div class="absolute -bottom-12 -left-12 w-32 h-32 bg-lavender-bg dark:bg-indigo-950/40 rounded-full blur-2xl opacity-60 pointer-events-none" aria-hidden="true"></div>
 
     <!-- Badge -->
-    <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-lavender-bg dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 text-xs font-semibold mb-6">
-      <span class="w-2 h-2 rounded-full bg-lavender-accent animate-pulse" aria-hidden="true"></span>
-      Error 404
+    <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-peach-bg dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 text-xs font-semibold mb-6">
+      <span class="w-2 h-2 rounded-full bg-peach-accent animate-pulse" aria-hidden="true"></span>
+      Error 403
     </div>
 
-    <!-- Illustration / Numeric Accent -->
+    <!-- Illustration -->
     <div class="relative mb-6">
       <h1 class="text-7xl sm:text-8xl font-black text-slate-100 dark:text-slate-800/50 tracking-tighter select-none">
-        404
+        403
       </h1>
       <div class="absolute inset-0 flex items-center justify-center">
-        <div class="w-16 h-16 rounded-2xl bg-lavender-bg dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shadow-sm border border-indigo-100 dark:border-indigo-900/40">
+        <div class="w-16 h-16 rounded-2xl bg-peach-bg dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center shadow-sm border border-rose-100 dark:border-rose-900/40">
           <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
           </svg>
         </div>
       </div>
     </div>
 
-    <!-- Heading & Description -->
+    <!-- What happened -->
     <h2 class="text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-100 tracking-tight mb-2">
-      Page Not Found
+      Access Denied
     </h2>
+
+    <!-- Why it happened -->
     <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mb-8 leading-relaxed">
-      The resource you're looking for doesn't exist, has been moved, or the link is expired.
+      You don't have permission to access this resource. This may happen if your session has expired or you're trying to access another user's data.
     </p>
 
-    <!-- Action Navigation Buttons -->
+    <!-- What to do next -->
     <div class="flex flex-col sm:flex-row gap-3 justify-center">
       <a href="/#/" class="flex-1 px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-900 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white text-xs font-semibold shadow-sm transition-all flex items-center justify-center gap-2 focus:ring-2 focus:ring-slate-800 dark:focus:ring-indigo-500">
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
@@ -104,7 +97,7 @@
         Return to Home
       </a>
       <a href="/#/login" class="px-5 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-semibold transition-colors flex items-center justify-center">
-        Sign In
+        Sign In Again
       </a>
     </div>
 

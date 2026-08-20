@@ -11,6 +11,7 @@ import {
   deleteCategory
 } from "../db.js";
 import { openCategoryModal, showConfirmModal } from "../modals.js";
+import { renderSectionError } from "./errorStates.js";
 
 // Pastel token mapping for card badges, borders and accents (Design.md §1.1)
 const COLOR_SCHEMES = {
@@ -41,6 +42,48 @@ const COLOR_SCHEMES = {
     accent: "bg-butter-accent",
     border: "border-amber-200 dark:border-amber-900/60",
     hoverBorder: "hover:border-amber-300 dark:hover:border-amber-700"
+  },
+  sky: {
+    bg: "bg-sky-bg dark:bg-sky-950/60",
+    text: "text-sky-600 dark:text-sky-300",
+    accent: "bg-sky-accent",
+    border: "border-sky-200 dark:border-sky-900/60",
+    hoverBorder: "hover:border-sky-300 dark:hover:border-sky-700"
+  },
+  violet: {
+    bg: "bg-violet-bg dark:bg-purple-950/60",
+    text: "text-purple-600 dark:text-purple-300",
+    accent: "bg-violet-accent",
+    border: "border-purple-200 dark:border-purple-900/60",
+    hoverBorder: "hover:border-purple-300 dark:hover:border-purple-700"
+  },
+  coral: {
+    bg: "bg-coral-bg dark:bg-orange-950/60",
+    text: "text-orange-600 dark:text-orange-300",
+    accent: "bg-coral-accent",
+    border: "border-orange-200 dark:border-orange-900/60",
+    hoverBorder: "hover:border-orange-300 dark:hover:border-orange-700"
+  },
+  teal: {
+    bg: "bg-teal-bg dark:bg-teal-950/60",
+    text: "text-teal-600 dark:text-teal-300",
+    accent: "bg-teal-accent",
+    border: "border-teal-200 dark:border-teal-900/60",
+    hoverBorder: "hover:border-teal-300 dark:hover:border-teal-700"
+  },
+  sage: {
+    bg: "bg-sage-bg dark:bg-lime-950/60",
+    text: "text-lime-700 dark:text-lime-300",
+    accent: "bg-sage-accent",
+    border: "border-lime-200 dark:border-lime-900/60",
+    hoverBorder: "hover:border-lime-300 dark:hover:border-lime-700"
+  },
+  slate: {
+    bg: "bg-slate-bg dark:bg-slate-900/60",
+    text: "text-slate-600 dark:text-slate-300",
+    accent: "bg-slate-accent",
+    border: "border-slate-300 dark:border-slate-700",
+    hoverBorder: "hover:border-slate-400 dark:hover:border-slate-600"
   }
 };
 
@@ -58,7 +101,7 @@ function getIconSymbol(iconKey) {
     "fitness": "fitness_center",
     "code": "code"
   };
-  const iconName = map[iconKey] || "folder";
+  const iconName = map[iconKey] || "category";
   return `<span class="material-symbols-outlined text-2xl">${iconName}</span>`;
 }
 
@@ -127,15 +170,10 @@ export function renderHub(container, uid) {
           </div>
           <h2 class="text-base font-bold text-slate-800 dark:text-slate-100">Create your first activity</h2>
           <p class="text-xs text-slate-500 dark:text-slate-400 mt-1.5 max-w-sm mx-auto leading-relaxed">
-            Group your checklists into calming categories like Study, Health, Chores, or Deep Work.
+            Click <strong>+ New Category</strong> above to group your checklists into calming categories like Study, Health, Chores, or Deep Work.
           </p>
-          <button type="button" id="empty-create-category-btn" class="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white text-xs font-semibold shadow-sm transition-all">
-            <span class="material-symbols-outlined text-sm">add</span>
-            Create Category
-          </button>
         </article>
       `;
-      grid.querySelector("#empty-create-category-btn")?.addEventListener("click", () => openCategoryModal(uid));
       return;
     }
 
@@ -249,11 +287,26 @@ export function renderHub(container, uid) {
   const unsubCats = subscribeCategories(uid, (cats) => {
     categories = cats;
     updateUI();
+  }, (err) => {
+    console.error("[Hub:subscribeCategories] Error:", err);
+    const grid = container.querySelector("#categories-grid");
+    if (grid) {
+      renderSectionError(grid, {
+        title: "Could not load activities",
+        message: "An error occurred while syncing your activities. Please check your connection.",
+        icon: "cloud_off",
+        retryFn: () => {
+          window.location.reload();
+        }
+      });
+    }
   });
 
   const unsubChecklists = subscribeAllChecklists(uid, (checks) => {
     checklists = checks;
     updateUI();
+  }, (err) => {
+    console.error("[Hub:subscribeAllChecklists] Error:", err);
   });
 
   return () => {
