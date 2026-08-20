@@ -26,12 +26,16 @@ import {
   openCategoryModal,
   openChecklistModal,
   openChecklistSettingsModal,
-  showConfirmModal
+  showConfirmModal,
+  initModalBackdrops
 } from "./modals.js";
 
+import { renderHome } from "./views/home.js";
 import { renderHub } from "./views/hub.js";
+import { renderNotes } from "./views/notes.js";
 import { renderCategoryDetail } from "./views/categoryDetail.js";
 import { renderChecklistDetail } from "./views/checklistDetail.js";
+import { renderNotFoundView } from "./views/errorStates.js";
 
 /* ==========================================================================
    APPLICATION STATE & REFERENCES
@@ -259,7 +263,12 @@ function renderAuthView() {
         </div>
         <div>
           <label for="auth-password" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">Password</label>
-          <input type="password" id="auth-password" required minlength="6" placeholder="••••••••" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:border-lavender-accent focus:ring-1 focus:ring-lavender-accent" />
+          <div class="relative">
+            <input type="password" id="auth-password" required minlength="6" placeholder="••••••••" class="w-full px-3.5 py-2.5 pr-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:border-lavender-accent focus:ring-1 focus:ring-lavender-accent" />
+            <button type="button" id="auth-toggle-pwd-btn" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded focus:outline-none focus-visible:ring-1 focus-visible:ring-lavender flex items-center justify-center" aria-label="Toggle password visibility">
+              <span class="material-symbols-outlined text-lg" id="auth-pwd-icon">visibility</span>
+            </button>
+          </div>
         </div>
         <button type="submit" id="auth-submit-btn" class="w-full py-2.5 rounded-xl text-sm font-semibold bg-slate-800 hover:bg-slate-900 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white shadow-sm transition-all mt-2 focus:ring-2 focus:ring-slate-800">Sign In</button>
       </form>
@@ -283,6 +292,19 @@ function renderAuthView() {
   const authForm = document.getElementById("auth-form");
   const googleBtn = document.getElementById("auth-google-btn");
   const anonBtn = document.getElementById("auth-anonymous-btn");
+  const togglePwdBtn = document.getElementById("auth-toggle-pwd-btn");
+  const pwdInput = document.getElementById("auth-password");
+  const pwdIcon = document.getElementById("auth-pwd-icon");
+
+  // Password Visibility Toggle
+  togglePwdBtn?.addEventListener("click", () => {
+    if (!pwdInput) return;
+    const isPassword = pwdInput.type === "password";
+    pwdInput.type = isPassword ? "text" : "password";
+    if (pwdIcon) {
+      pwdIcon.textContent = isPassword ? "visibility_off" : "visibility";
+    }
+  });
 
   // Google Sign In
   googleBtn?.addEventListener("click", async () => {
@@ -630,15 +652,56 @@ function openProfileModal(user) {
     googlePhotoRow.classList.add("hidden");
   }
 
-  copyBtn.onclick = () => {
-    navigator.clipboard.writeText(user.uid);
-    showToast("User ID copied to clipboard", "success");
+  copyBtn.onclick = async () => {
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(user.uid);
+      } else {
+        uidText?.select();
+        document.execCommand("copy");
+      }
+      copyBtn.innerHTML = `
+        <span class="material-symbols-outlined text-sm text-emerald-600 dark:text-emerald-400">check</span>
+        <span class="text-emerald-600 dark:text-emerald-400 font-semibold">Copied!</span>
+      `;
+      showToast("User ID copied to clipboard", "success");
+      setTimeout(() => {
+        copyBtn.innerHTML = `
+          <span class="material-symbols-outlined text-sm">content_copy</span>
+          Copy
+        `;
+      }, 2000);
+    } catch (err) {
+      console.error("[Profile] Copy failed:", err);
+      showToast("Failed to copy ID automatically. Please select and copy manually.", "error");
+    }
   };
 
   doneBtn.onclick = () => modal.close();
   closeBtn.onclick = () => modal.close();
 
   modal.showModal();
+}
+
+/* ==========================================================================
+   HEADER NAVIGATION HIGHLIGHT
+   ========================================================================== */
+
+function updateNavHighlight(hash) {
+  const homeLink = document.getElementById("nav-link-home");
+  const activitiesLink = document.getElementById("nav-link-activities");
+  const notesLink = document.getElementById("nav-link-notes");
+
+  const activeClass = "nav-item px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm flex items-center gap-1.5 transition-all";
+  const inactiveClass = "nav-item px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-1.5 transition-all";
+
+  const isHome = hash === "#/" || hash === "#/home" || hash === "" || hash === "#";
+  const isActivities = hash.startsWith("#/activities") || hash.startsWith("#/hub") || hash.startsWith("#/category") || hash.startsWith("#/checklist");
+  const isNotes = hash.startsWith("#/notes");
+
+  if (homeLink) homeLink.className = isHome ? activeClass : inactiveClass;
+  if (activitiesLink) activitiesLink.className = isActivities ? activeClass : inactiveClass;
+  if (notesLink) notesLink.className = isNotes ? activeClass : inactiveClass;
 }
 
 /* ==========================================================================
@@ -650,9 +713,11 @@ async function router() {
   viewState.currentRoute = hash;
 
   const user = getCurrentUser();
+  const headerNav = document.getElementById("header-nav");
 
   // Route Guard: Unauthenticated users redirected to #/login
   if (!user && hash !== "#/login") {
+    if (headerNav) headerNav.classList.add("hidden");
     window.location.hash = "#/login";
     return;
   }
@@ -665,19 +730,41 @@ async function router() {
 
   // 1. Auth View
   if (hash === "#/login") {
+    if (headerNav) headerNav.classList.add("hidden");
     renderAuthView();
     return;
   }
 
-  // 2. Category Hub View
-  if (hash === "#/" || hash === "#/home") {
+  if (headerNav) {
+    headerNav.classList.remove("hidden");
+  }
+  updateNavHighlight(hash);
+
+  // 2. Homescreen Dashboard View (#/ or #/home)
+  if (hash === "#/" || hash === "#/home" || hash === "") {
+    cleanupCurrentView();
+    renderBreadcrumbs();
+    viewState.activeCleanup = renderHome(appRoot, user.uid);
+    return;
+  }
+
+  // 3. Activities / Category Hub View (#/activities or #/hub)
+  if (hash === "#/activities" || hash === "#/hub") {
     cleanupCurrentView();
     renderBreadcrumbs();
     viewState.activeCleanup = renderHub(appRoot, user.uid);
     return;
   }
 
-  // 3. Category Detail View
+  // 4. Sticky Notes View (#/notes)
+  if (hash === "#/notes") {
+    cleanupCurrentView();
+    renderBreadcrumbs();
+    viewState.activeCleanup = renderNotes(appRoot, user.uid);
+    return;
+  }
+
+  // 5. Category Detail View
   const categoryMatch = hash.match(/^#\/category\/([^/?]+)/);
   if (categoryMatch) {
     const categoryId = categoryMatch[1];
@@ -686,7 +773,7 @@ async function router() {
     return;
   }
 
-  // 4. Checklist Detail View
+  // 6. Checklist Detail View
   const checklistMatch = hash.match(/^#\/checklist\/([^/?]+)/);
   if (checklistMatch) {
     const checklistId = checklistMatch[1];
@@ -695,10 +782,10 @@ async function router() {
     return;
   }
 
-  // Fallback -> Hub
+  // 7. Fallback -> In-app 404 Not Found View
   cleanupCurrentView();
-  renderBreadcrumbs();
-  viewState.activeCleanup = renderHub(appRoot, user.uid);
+  renderBreadcrumbs([{ label: "404 Not Found" }]);
+  renderNotFoundView(appRoot);
 }
 
 /* ==========================================================================
@@ -706,6 +793,9 @@ async function router() {
    ========================================================================== */
 
 function bootstrap() {
+  // Initialize modal backdrops and dismissal handlers
+  initModalBackdrops();
+
   if (currentDateText) {
     const today = new Date();
     currentDateText.textContent = today.toLocaleDateString("en-US", {
@@ -758,6 +848,80 @@ function bootstrap() {
       }
     }
   });
+
+  // Mobile Navigation Drawer Coordinator
+  const mobileMenuBtn = document.getElementById("mobile-menu-btn");
+  const mobileDrawer = document.getElementById("mobile-nav-drawer");
+  const mobileCloseBtn = document.getElementById("mobile-nav-close-btn");
+
+  if (mobileMenuBtn && mobileDrawer) {
+    mobileMenuBtn.addEventListener("click", () => {
+      mobileDrawer.showModal();
+      mobileMenuBtn.setAttribute("aria-expanded", "true");
+    });
+
+    mobileCloseBtn?.addEventListener("click", () => {
+      mobileDrawer.close();
+      mobileMenuBtn.setAttribute("aria-expanded", "false");
+    });
+
+    // Close drawer when any mobile nav link is clicked
+    mobileDrawer.querySelectorAll("a").forEach((link) => {
+      link.addEventListener("click", () => {
+        mobileDrawer.close();
+        mobileMenuBtn.setAttribute("aria-expanded", "false");
+      });
+    });
+  }
+
+  // Scroll Progress Indicator & Scroll-to-Top Button
+  const progressBar = document.getElementById("scroll-progress-bar");
+  const scrollToTopBtn = document.getElementById("scroll-to-top-btn");
+
+  window.addEventListener("scroll", () => {
+    const scrollTop = window.scrollY || document.documentElement.scrollTop;
+    const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    
+    // Update scroll progress bar
+    if (progressBar && scrollHeight > 0) {
+      const scrollPercent = Math.min(100, Math.max(0, (scrollTop / scrollHeight) * 100));
+      progressBar.style.width = `${scrollPercent}%`;
+    }
+
+    // Toggle scroll-to-top button visibility (show after 250px)
+    if (scrollToTopBtn) {
+      if (scrollTop > 250) {
+        scrollToTopBtn.classList.remove("opacity-0", "pointer-events-none", "translate-y-3");
+        scrollToTopBtn.classList.add("opacity-100", "translate-y-0");
+      } else {
+        scrollToTopBtn.classList.add("opacity-0", "pointer-events-none", "translate-y-3");
+        scrollToTopBtn.classList.remove("opacity-100", "translate-y-0");
+      }
+    }
+  }, { passive: true });
+
+  if (scrollToTopBtn) {
+    scrollToTopBtn.addEventListener("click", () => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  }
+
+  // Cookie Consent Banner Initialization
+  const cookieBanner = document.getElementById("cookie-consent-banner");
+  const cookieAcceptBtn = document.getElementById("cookie-accept-btn");
+  const COOKIE_KEY = "daylign-cookie-consent";
+
+  if (cookieBanner && cookieAcceptBtn) {
+    if (!localStorage.getItem(COOKIE_KEY)) {
+      cookieBanner.classList.remove("hidden");
+    }
+
+    cookieAcceptBtn.addEventListener("click", () => {
+      localStorage.setItem(COOKIE_KEY, "accepted");
+      cookieBanner.classList.add("hidden");
+      showToast("Preferences saved", "info", 2000);
+    });
+  }
 }
 
 // Start application when DOM is ready

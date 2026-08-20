@@ -10,7 +10,9 @@ import {
   updateCategory,
   createChecklist,
   updateChecklist,
-  stopAllRunningTimersInChecklist
+  stopAllRunningTimersInChecklist,
+  createNote,
+  updateNote
 } from "./db.js";
 
 /**
@@ -43,8 +45,9 @@ export function openCategoryModal(uid, editCategory = null, onSaved) {
   const titleEl = document.getElementById("category-modal-title");
   const idInput = document.getElementById("category-id-input");
   const nameInput = document.getElementById("category-name-input");
-  const iconSelect = document.getElementById("category-icon-select");
   const submitBtn = document.getElementById("category-submit-btn");
+  const closeBtn = document.getElementById("category-modal-close-btn");
+  const cancelBtn = document.getElementById("category-cancel-btn");
 
   if (!modal || !form) {
     console.error("[Modals] category-modal or form element not found in DOM");
@@ -55,7 +58,6 @@ export function openCategoryModal(uid, editCategory = null, onSaved) {
     titleEl.textContent = "Edit Category";
     idInput.value = editCategory.id;
     nameInput.value = editCategory.name || "";
-    iconSelect.value = editCategory.icon || "book-open";
     
     const radio = form.querySelector(`input[name="colorToken"][value="${editCategory.colorToken || "lavender"}"]`);
     if (radio) radio.checked = true;
@@ -64,12 +66,20 @@ export function openCategoryModal(uid, editCategory = null, onSaved) {
     titleEl.textContent = "New Category";
     form.reset();
     idInput.value = "";
+    const defaultRadio = form.querySelector('input[name="colorToken"][value="lavender"]');
+    if (defaultRadio) defaultRadio.checked = true;
     if (submitBtn) submitBtn.textContent = "Create Category";
   }
+
+  const handleDismiss = () => {
+    modal.close();
+  };
 
   const cleanup = () => {
     form.removeEventListener("submit", handleSubmit);
     modal.removeEventListener("close", handleClose);
+    closeBtn?.removeEventListener("click", handleDismiss);
+    cancelBtn?.removeEventListener("click", handleDismiss);
   };
 
   const handleClose = () => {
@@ -85,7 +95,7 @@ export function openCategoryModal(uid, editCategory = null, onSaved) {
       return;
     }
 
-    const icon = iconSelect.value || "book-open";
+    const icon = editCategory?.icon || "category";
     const colorToken = form.querySelector('input[name="colorToken"]:checked')?.value || "lavender";
     const categoryId = idInput.value;
 
@@ -115,6 +125,8 @@ export function openCategoryModal(uid, editCategory = null, onSaved) {
     }
   };
 
+  closeBtn?.addEventListener("click", handleDismiss);
+  cancelBtn?.addEventListener("click", handleDismiss);
   form.addEventListener("submit", handleSubmit);
   modal.addEventListener("close", handleClose);
 
@@ -141,6 +153,8 @@ export function openChecklistModal(uid, categoryId, onCreated) {
   const graphToggle = document.getElementById("checklist-graph-toggle");
   const tasksInput = document.getElementById("initial-tasks-input");
   const submitBtn = document.getElementById("checklist-submit-btn");
+  const closeBtn = document.getElementById("checklist-modal-close-btn");
+  const cancelBtn = document.getElementById("checklist-cancel-btn");
 
   if (!modal || !form) {
     console.error("[Modals] checklist-modal or form element not found in DOM");
@@ -155,9 +169,15 @@ export function openChecklistModal(uid, categoryId, onCreated) {
     submitBtn.textContent = "Create Checklist";
   }
 
+  const handleDismiss = () => {
+    modal.close();
+  };
+
   const cleanup = () => {
     form.removeEventListener("submit", handleSubmit);
     modal.removeEventListener("close", handleClose);
+    closeBtn?.removeEventListener("click", handleDismiss);
+    cancelBtn?.removeEventListener("click", handleDismiss);
   };
 
   const handleClose = () => {
@@ -219,6 +239,8 @@ export function openChecklistModal(uid, categoryId, onCreated) {
     }
   };
 
+  closeBtn?.addEventListener("click", handleDismiss);
+  cancelBtn?.addEventListener("click", handleDismiss);
   form.addEventListener("submit", handleSubmit);
   modal.addEventListener("close", handleClose);
 
@@ -255,6 +277,8 @@ export function openChecklistSettingsModal(uid, checklist, onSaved) {
   const graphToggle = modal.querySelector("#checklist-settings-graph-toggle") || modal.querySelector("#checklist-graph-toggle");
   const tasksSection = modal.querySelector("#initial-tasks-section");
   const submitBtn = modal.querySelector('button[type="submit"]');
+  const closeBtn = modal.querySelector("#checklist-settings-close-btn") || modal.querySelector("#checklist-modal-close-btn");
+  const cancelBtn = modal.querySelector("#checklist-settings-cancel-btn") || modal.querySelector("#checklist-cancel-btn");
 
   if (titleEl) titleEl.textContent = "Checklist Settings";
   if (nameInput) nameInput.value = checklist.name || "";
@@ -266,9 +290,15 @@ export function openChecklistSettingsModal(uid, checklist, onSaved) {
   const resetRadio = form.querySelector(`input[name="resetMode"][value="${checklist.settings?.resetMode || "daily"}"]`);
   if (resetRadio) resetRadio.checked = true;
 
+  const handleDismiss = () => {
+    modal.close();
+  };
+
   const cleanup = () => {
     form.removeEventListener("submit", handleSubmit);
     modal.removeEventListener("close", handleClose);
+    closeBtn?.removeEventListener("click", handleDismiss);
+    cancelBtn?.removeEventListener("click", handleDismiss);
     if (tasksSection) tasksSection.classList.remove("hidden");
   };
 
@@ -337,6 +367,8 @@ export function openChecklistSettingsModal(uid, checklist, onSaved) {
     }
   };
 
+  closeBtn?.addEventListener("click", handleDismiss);
+  cancelBtn?.addEventListener("click", handleDismiss);
   form.addEventListener("submit", handleSubmit);
   modal.addEventListener("close", handleClose);
 
@@ -345,7 +377,118 @@ export function openChecklistSettingsModal(uid, checklist, onSaved) {
 }
 
 /* ==========================================================================
-   4. CONFIRMATION MODAL (<dialog id="confirm-modal">)
+   4. STICKY NOTE MODAL (<dialog id="note-modal">)
+   ========================================================================== */
+
+/**
+ * Open Sticky Note Modal for creation or editing
+ * 
+ * @param {string} uid - User ID
+ * @param {Object} [editNote=null] - Note document to edit
+ * @param {Function} [onSaved] - Callback invoked on successful save
+ */
+export function openNoteModal(uid, editNote = null, onSaved) {
+  const modal = document.getElementById("note-modal");
+  const form = document.getElementById("note-form");
+  const titleEl = document.getElementById("note-modal-title");
+  const idInput = document.getElementById("note-id-input");
+  const titleInput = document.getElementById("note-title-input");
+  const contentInput = document.getElementById("note-content-input");
+  const importantToggle = document.getElementById("note-important-toggle");
+  const submitBtn = document.getElementById("note-submit-btn");
+  const closeBtn = document.getElementById("note-modal-close-btn");
+  const cancelBtn = document.getElementById("note-cancel-btn");
+
+  if (!modal || !form) {
+    console.error("[Modals] note-modal or form element not found in DOM");
+    return;
+  }
+
+  if (editNote) {
+    if (titleEl) titleEl.textContent = "Edit Sticky Note";
+    if (idInput) idInput.value = editNote.id;
+    if (titleInput) titleInput.value = editNote.title || "";
+    if (contentInput) contentInput.value = editNote.content || "";
+    if (importantToggle) importantToggle.checked = Boolean(editNote.isImportant);
+    const radio = form.querySelector(`input[name="noteColor"][value="${editNote.colorToken || "butter"}"]`);
+    if (radio) radio.checked = true;
+    if (submitBtn) submitBtn.textContent = "Save Changes";
+  } else {
+    if (titleEl) titleEl.textContent = "New Sticky Note";
+    form.reset();
+    if (idInput) idInput.value = "";
+    const defaultRadio = form.querySelector('input[name="noteColor"][value="butter"]');
+    if (defaultRadio) defaultRadio.checked = true;
+    if (importantToggle) importantToggle.checked = false;
+    if (submitBtn) submitBtn.textContent = "Create Note";
+  }
+
+  const handleDismiss = () => {
+    modal.close();
+  };
+
+  const cleanup = () => {
+    form.removeEventListener("submit", handleSubmit);
+    modal.removeEventListener("close", handleClose);
+    closeBtn?.removeEventListener("click", handleDismiss);
+    cancelBtn?.removeEventListener("click", handleDismiss);
+  };
+
+  const handleClose = () => {
+    cleanup();
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const content = contentInput?.value.trim();
+    const title = titleInput?.value.trim();
+    if (!content && !title) {
+      notify("Note content or title is required", "error");
+      contentInput?.focus();
+      return;
+    }
+
+    const colorToken = form.querySelector('input[name="noteColor"]:checked')?.value || "butter";
+    const isImportant = Boolean(importantToggle?.checked);
+    const noteId = idInput?.value;
+
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Saving...";
+    }
+
+    try {
+      if (noteId) {
+        await updateNote(uid, noteId, { title, content, colorToken, isImportant });
+        notify("Note updated", "success");
+      } else {
+        await createNote(uid, { title, content, colorToken, isImportant });
+        notify(isImportant ? "Note created and pinned to Homescreen" : "Note created", "success");
+      }
+      modal.close();
+      if (typeof onSaved === "function") onSaved();
+    } catch (err) {
+      notify(err.message, "error");
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = noteId ? "Save Changes" : "Create Note";
+      }
+      cleanup();
+    }
+  };
+
+  closeBtn?.addEventListener("click", handleDismiss);
+  cancelBtn?.addEventListener("click", handleDismiss);
+  form.addEventListener("submit", handleSubmit);
+  modal.addEventListener("close", handleClose);
+
+  modal.showModal();
+  if (contentInput) contentInput.focus();
+}
+
+/* ==========================================================================
+   5. CONFIRMATION MODAL (<dialog id="confirm-modal">)
    ========================================================================== */
 
 /**
@@ -413,9 +556,45 @@ export function showConfirmModal({
   });
 }
 
+/**
+ * Attach backdrop click handlers to all dialogs so clicking the background overlay closes them
+ */
+export function initModalBackdrops() {
+  document.querySelectorAll("dialog").forEach((dialog) => {
+    dialog.addEventListener("click", (e) => {
+      const rect = dialog.getBoundingClientRect();
+      const isInDialog = (
+        rect.top <= e.clientY &&
+        e.clientY <= rect.top + rect.height &&
+        rect.left <= e.clientX &&
+        e.clientX <= rect.left + rect.width
+      );
+      if (!isInDialog) {
+        dialog.close();
+      }
+    });
+  });
+
+  // Also wire profile-modal and guest-help-modal close buttons
+  document.getElementById("profile-modal-close-btn")?.addEventListener("click", () => {
+    document.getElementById("profile-modal")?.close();
+  });
+  document.getElementById("profile-modal-close-btn-bottom")?.addEventListener("click", () => {
+    document.getElementById("profile-modal")?.close();
+  });
+  document.getElementById("guest-help-modal-close-btn")?.addEventListener("click", () => {
+    document.getElementById("guest-help-modal")?.close();
+  });
+  document.getElementById("guest-help-close-btn")?.addEventListener("click", () => {
+    document.getElementById("guest-help-modal")?.close();
+  });
+}
+
 export default {
   openCategoryModal,
   openChecklistModal,
   openChecklistSettingsModal,
-  showConfirmModal
+  openNoteModal,
+  showConfirmModal,
+  initModalBackdrops
 };

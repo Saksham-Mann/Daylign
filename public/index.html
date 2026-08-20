@@ -5,6 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="Daylign — A serene, lightweight personal learning, habit, and activity tracker with configurable reset cadences, timers, and analytics." />
   <title>Daylign — Personal Learning, Habit & Activity Tracker</title>
+  <link rel="canonical" href="https://daylign-22030.web.app/" />
+
+  <!-- Open Graph / Social Media -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://daylign-22030.web.app/" />
+  <meta property="og:title" content="Daylign — Personal Learning, Habit & Activity Tracker" />
+  <meta property="og:description" content="A serene, lightweight personal learning, habit, and activity tracker with configurable reset cadences, timers, and analytics." />
+  <meta property="og:site_name" content="Daylign" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Daylign — Personal Learning, Habit & Activity Tracker" />
+  <meta name="twitter:description" content="A serene, lightweight personal learning, habit, and activity tracker with configurable reset cadences, timers, and analytics." />
 
   <!-- Favicon (Inline SVG for zero external asset dependency) -->
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23E0E7FF'/%3E%3Cpath d='M10 16l4 4 8-8' stroke='%23818CF8' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E" />
@@ -61,6 +74,42 @@
               bg: 'var(--color-butter-bg)',
               accent: '#FBBF24',
               hover: '#F59E0B'
+            },
+            sky: {
+              DEFAULT: '#38BDF8',
+              bg: 'var(--color-sky-bg)',
+              accent: '#38BDF8',
+              hover: '#0284C7'
+            },
+            violet: {
+              DEFAULT: '#A855F7',
+              bg: 'var(--color-violet-bg)',
+              accent: '#A855F7',
+              hover: '#9333EA'
+            },
+            coral: {
+              DEFAULT: '#FB923C',
+              bg: 'var(--color-coral-bg)',
+              accent: '#FB923C',
+              hover: '#EA580C'
+            },
+            teal: {
+              DEFAULT: '#2DD4BF',
+              bg: 'var(--color-teal-bg)',
+              accent: '#2DD4BF',
+              hover: '#0D9488'
+            },
+            sage: {
+              DEFAULT: '#84CC16',
+              bg: 'var(--color-sage-bg)',
+              accent: '#84CC16',
+              hover: '#65A30D'
+            },
+            slate: {
+              DEFAULT: '#94A3B8',
+              bg: 'var(--color-slate-bg)',
+              accent: '#94A3B8',
+              hover: '#64748B'
             }
           },
           fontFamily: {
@@ -98,6 +147,18 @@
       --color-peach-accent: #FB7185;
       --color-butter-bg: #FEF3C7;
       --color-butter-accent: #FBBF24;
+      --color-sky-bg: #E0F2FE;
+      --color-sky-accent: #38BDF8;
+      --color-violet-bg: #F3E8FF;
+      --color-violet-accent: #A855F7;
+      --color-coral-bg: #FFEDD5;
+      --color-coral-accent: #FB923C;
+      --color-teal-bg: #CCFBF1;
+      --color-teal-accent: #2DD4BF;
+      --color-sage-bg: #ECFCCB;
+      --color-sage-accent: #84CC16;
+      --color-slate-bg: #F1F5F9;
+      --color-slate-accent: #94A3B8;
     }
 
     html.dark, body.dark {
@@ -116,6 +177,18 @@
       --color-peach-accent: #FB7185;
       --color-butter-bg: #372A0D;
       --color-butter-accent: #FBBF24;
+      --color-sky-bg: #0C2B40;
+      --color-sky-accent: #38BDF8;
+      --color-violet-bg: #2E1065;
+      --color-violet-accent: #A855F7;
+      --color-coral-bg: #3D1B06;
+      --color-coral-accent: #FB923C;
+      --color-teal-bg: #0B2D29;
+      --color-teal-accent: #2DD4BF;
+      --color-sage-bg: #1F3307;
+      --color-sage-accent: #84CC16;
+      --color-slate-bg: #1E293B;
+      --color-slate-accent: #94A3B8;
     }
 
     body {
@@ -166,23 +239,36 @@
       }
     }
 
-    /* Task celebration checkbox bounce */
-    @keyframes task-bounce {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.2); }
-      100% { transform: scale(1); }
+    /* Custom Checkbox Animation */
+    .checkbox-custom {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 1.25rem;
+      height: 1.25rem;
+      border-radius: 0.5rem;
+      border: 2px solid var(--color-border);
+      background-color: var(--color-surface);
+      cursor: pointer;
+      display: inline-grid;
+      place-content: center;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    .animate-task-bounce {
-      animation: task-bounce 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    .checkbox-custom:checked {
+      background-color: var(--color-mint-accent);
+      border-color: var(--color-mint-accent);
     }
-
-    /* Active timer pulsing border glow */
-    @keyframes timer-glow {
-      0%, 100% { border-color: rgba(52, 211, 153, 0.4); box-shadow: 0 0 0 1px rgba(52, 211, 153, 0.2); }
-      50% { border-color: rgba(52, 211, 153, 1); box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.25); }
+    .checkbox-custom::before {
+      content: "";
+      width: 0.65rem;
+      height: 0.65rem;
+      transform: scale(0);
+      transition: 120ms transform ease-in-out;
+      box-shadow: inset 1em 1em white;
+      transform-origin: bottom left;
+      clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
     }
-    .animate-timer-active {
-      animation: timer-glow 2s infinite ease-in-out;
+    .checkbox-custom:checked::before {
+      transform: scale(1);
     }
 
     /* Accessibility: clear focus ring */
@@ -209,6 +295,19 @@
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
       }
+    /* Print Stylesheet */
+    @media print {
+      header, footer, #toast-container, #scroll-progress-bar, #scroll-to-top-btn, #cookie-consent-banner, #offline-banner, #user-controls, dialog {
+        display: none !important;
+      }
+      body {
+        background: #ffffff !important;
+        color: #000000 !important;
+      }
+      #app-root {
+        max-width: 100% !important;
+        padding: 0 !important;
+      }
     }
   </style>
 
@@ -227,6 +326,12 @@
   </script>
 </head>
 <body class="min-h-full flex flex-col selection:bg-lavender-bg selection:text-slate-900">
+
+  <!-- Accessibility: Skip to Main Content Link -->
+  <a href="#app-root" class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:px-4 focus:py-2.5 focus:bg-slate-900 focus:text-white focus:rounded-xl focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-lavender font-semibold text-xs transition-all">Skip to main content</a>
+
+  <!-- Scroll Progress Indicator -->
+  <div id="scroll-progress-bar" class="fixed top-0 left-0 h-1 bg-indigo-500 z-50 transition-all duration-75 w-0 pointer-events-none" role="progressbar" aria-hidden="true"></div>
 
   <!-- Offline Connectivity Banner -->
   <aside id="offline-banner" class="hidden bg-amber-100 border-b border-amber-200 text-amber-900 px-4 py-2 text-xs text-center font-medium transition-all" role="status" aria-live="polite">
@@ -251,35 +356,41 @@
           <span class="material-symbols-outlined text-xl text-indigo-500 dark:text-indigo-400">task_alt</span>
         </div>
         <div class="flex flex-col">
-          <span class="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight flex items-center gap-1.5">
-            Daylign
-            <span class="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-mint-bg dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">v1.1</span>
-          </span>
-          <span class="text-[11px] text-slate-400 dark:text-slate-500 hidden sm:inline -mt-1">Harmonious habits & activities</span>
+          <span class="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight">Daylign</span>
         </div>
       </a>
 
-      <!-- Header Center: Dynamic Reset / Date Indicator -->
-      <div id="header-date-badge" class="hidden md:flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 px-3 py-1.5 rounded-full">
-        <span class="material-symbols-outlined text-sm text-slate-400 dark:text-slate-500">calendar_today</span>
-        <span id="current-date-text">Today</span>
-      </div>
+      <!-- Header Center: Navigation Links -->
+      <nav id="header-nav" class="hidden sm:flex items-center gap-1 bg-slate-100/80 dark:bg-slate-900/60 p-1 rounded-2xl border border-slate-200/60 dark:border-slate-800" aria-label="Main Navigation">
+        <a href="#/" id="nav-link-home" class="nav-item px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-base">home</span>
+          Home
+        </a>
+        <a href="#/activities" id="nav-link-activities" class="nav-item px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-base">category</span>
+          Activities
+        </a>
+        <a href="#/notes" id="nav-link-notes" class="nav-item px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-base">sticky_note_2</span>
+          Notes
+        </a>
+      </nav>
 
       <!-- Header Actions: User Profile, Theme Switcher & Auth Controls -->
-      <div id="user-controls" class="relative flex items-center gap-3">
-        <!-- Populated dynamically by auth observer -->
-        <div class="h-9 w-24 bg-slate-100 dark:bg-slate-800 rounded-full animate-pulse"></div>
+      <div class="flex items-center gap-2">
+        <!-- Mobile Menu Toggle Button -->
+        <button type="button" id="mobile-menu-btn" class="sm:hidden p-2 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-lavender flex items-center justify-center" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="mobile-nav-drawer">
+          <span class="material-symbols-outlined text-2xl">menu</span>
+        </button>
+
+        <div id="user-controls" class="relative flex items-center gap-3">
+          <!-- Populated dynamically by auth observer -->
+          <div class="h-9 w-24 bg-slate-100 dark:bg-slate-800 rounded-full animate-pulse"></div>
+        </div>
       </div>
 
     </div>
   </header>
-
-  <!-- Dynamic Breadcrumb Navigation Bar -->
-  <nav id="breadcrumb-nav" aria-label="Breadcrumb" class="bg-surface/50 dark:bg-[#131B2E]/50 border-b border-slate-200/80 dark:border-slate-800/80 px-4 sm:px-6 py-2.5 text-xs text-slate-500 dark:text-slate-400">
-    <div class="max-w-6xl mx-auto flex items-center gap-2 overflow-x-auto whitespace-nowrap" id="breadcrumb-links">
-      <a href="#/" class="text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-medium transition-colors">Home</a>
-    </div>
-  </nav>
 
   <!-- Main SPA Content Container -->
   <main id="app-root" class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8" role="main">
@@ -314,50 +425,78 @@
 
         <div>
           <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Pastel Color Theme</label>
-          <div class="grid grid-cols-4 gap-2.5" id="color-token-selector">
-            <label class="cursor-pointer">
+          <div class="grid grid-cols-5 gap-2" id="color-token-selector">
+            <label class="cursor-pointer group">
               <input type="radio" name="colorToken" value="lavender" class="sr-only peer" checked />
-              <div class="p-3 rounded-xl bg-lavender-bg border-2 border-transparent peer-checked:border-lavender-accent flex flex-col items-center gap-1.5 transition-all text-center">
-                <span class="w-5 h-5 rounded-full bg-lavender-accent inline-block shadow-sm"></span>
-                <span class="text-[11px] font-medium text-slate-700 dark:text-slate-200">Lavender</span>
+              <div class="p-2 rounded-xl bg-lavender-bg border-2 border-transparent peer-checked:border-lavender-accent peer-checked:ring-2 peer-checked:ring-lavender-accent/30 flex flex-col items-center gap-1 transition-all text-center group-hover:scale-105">
+                <span class="w-4 h-4 rounded-full bg-lavender-accent inline-block shadow-sm"></span>
+                <span class="text-[10px] font-medium text-slate-700 dark:text-slate-200">Lavender</span>
               </div>
             </label>
-            <label class="cursor-pointer">
+            <label class="cursor-pointer group">
               <input type="radio" name="colorToken" value="mint" class="sr-only peer" />
-              <div class="p-3 rounded-xl bg-mint-bg border-2 border-transparent peer-checked:border-mint-accent flex flex-col items-center gap-1.5 transition-all text-center">
-                <span class="w-5 h-5 rounded-full bg-mint-accent inline-block shadow-sm"></span>
-                <span class="text-[11px] font-medium text-slate-700 dark:text-slate-200">Mint</span>
+              <div class="p-2 rounded-xl bg-mint-bg border-2 border-transparent peer-checked:border-mint-accent peer-checked:ring-2 peer-checked:ring-mint-accent/30 flex flex-col items-center gap-1 transition-all text-center group-hover:scale-105">
+                <span class="w-4 h-4 rounded-full bg-mint-accent inline-block shadow-sm"></span>
+                <span class="text-[10px] font-medium text-slate-700 dark:text-slate-200">Mint</span>
               </div>
             </label>
-            <label class="cursor-pointer">
+            <label class="cursor-pointer group">
               <input type="radio" name="colorToken" value="peach" class="sr-only peer" />
-              <div class="p-3 rounded-xl bg-peach-bg border-2 border-transparent peer-checked:border-peach-accent flex flex-col items-center gap-1.5 transition-all text-center">
-                <span class="w-5 h-5 rounded-full bg-peach-accent inline-block shadow-sm"></span>
-                <span class="text-[11px] font-medium text-slate-700 dark:text-slate-200">Peach</span>
+              <div class="p-2 rounded-xl bg-peach-bg border-2 border-transparent peer-checked:border-peach-accent peer-checked:ring-2 peer-checked:ring-peach-accent/30 flex flex-col items-center gap-1 transition-all text-center group-hover:scale-105">
+                <span class="w-4 h-4 rounded-full bg-peach-accent inline-block shadow-sm"></span>
+                <span class="text-[10px] font-medium text-slate-700 dark:text-slate-200">Peach</span>
               </div>
             </label>
-            <label class="cursor-pointer">
+            <label class="cursor-pointer group">
               <input type="radio" name="colorToken" value="butter" class="sr-only peer" />
-              <div class="p-3 rounded-xl bg-butter-bg border-2 border-transparent peer-checked:border-butter-accent flex flex-col items-center gap-1.5 transition-all text-center">
-                <span class="w-5 h-5 rounded-full bg-butter-accent inline-block shadow-sm"></span>
-                <span class="text-[11px] font-medium text-slate-700 dark:text-slate-200">Butter</span>
+              <div class="p-2 rounded-xl bg-butter-bg border-2 border-transparent peer-checked:border-butter-accent peer-checked:ring-2 peer-checked:ring-butter-accent/30 flex flex-col items-center gap-1 transition-all text-center group-hover:scale-105">
+                <span class="w-4 h-4 rounded-full bg-butter-accent inline-block shadow-sm"></span>
+                <span class="text-[10px] font-medium text-slate-700 dark:text-slate-200">Butter</span>
+              </div>
+            </label>
+            <label class="cursor-pointer group">
+              <input type="radio" name="colorToken" value="sky" class="sr-only peer" />
+              <div class="p-2 rounded-xl bg-sky-bg border-2 border-transparent peer-checked:border-sky-accent peer-checked:ring-2 peer-checked:ring-sky-accent/30 flex flex-col items-center gap-1 transition-all text-center group-hover:scale-105">
+                <span class="w-4 h-4 rounded-full bg-sky-accent inline-block shadow-sm"></span>
+                <span class="text-[10px] font-medium text-slate-700 dark:text-slate-200">Sky</span>
+              </div>
+            </label>
+            <label class="cursor-pointer group">
+              <input type="radio" name="colorToken" value="violet" class="sr-only peer" />
+              <div class="p-2 rounded-xl bg-violet-bg border-2 border-transparent peer-checked:border-violet-accent peer-checked:ring-2 peer-checked:ring-violet-accent/30 flex flex-col items-center gap-1 transition-all text-center group-hover:scale-105">
+                <span class="w-4 h-4 rounded-full bg-violet-accent inline-block shadow-sm"></span>
+                <span class="text-[10px] font-medium text-slate-700 dark:text-slate-200">Violet</span>
+              </div>
+            </label>
+            <label class="cursor-pointer group">
+              <input type="radio" name="colorToken" value="coral" class="sr-only peer" />
+              <div class="p-2 rounded-xl bg-coral-bg border-2 border-transparent peer-checked:border-coral-accent peer-checked:ring-2 peer-checked:ring-coral-accent/30 flex flex-col items-center gap-1 transition-all text-center group-hover:scale-105">
+                <span class="w-4 h-4 rounded-full bg-coral-accent inline-block shadow-sm"></span>
+                <span class="text-[10px] font-medium text-slate-700 dark:text-slate-200">Coral</span>
+              </div>
+            </label>
+            <label class="cursor-pointer group">
+              <input type="radio" name="colorToken" value="teal" class="sr-only peer" />
+              <div class="p-2 rounded-xl bg-teal-bg border-2 border-transparent peer-checked:border-teal-accent peer-checked:ring-2 peer-checked:ring-teal-accent/30 flex flex-col items-center gap-1 transition-all text-center group-hover:scale-105">
+                <span class="w-4 h-4 rounded-full bg-teal-accent inline-block shadow-sm"></span>
+                <span class="text-[10px] font-medium text-slate-700 dark:text-slate-200">Teal</span>
+              </div>
+            </label>
+            <label class="cursor-pointer group">
+              <input type="radio" name="colorToken" value="sage" class="sr-only peer" />
+              <div class="p-2 rounded-xl bg-sage-bg border-2 border-transparent peer-checked:border-sage-accent peer-checked:ring-2 peer-checked:ring-sage-accent/30 flex flex-col items-center gap-1 transition-all text-center group-hover:scale-105">
+                <span class="w-4 h-4 rounded-full bg-sage-accent inline-block shadow-sm"></span>
+                <span class="text-[10px] font-medium text-slate-700 dark:text-slate-200">Sage</span>
+              </div>
+            </label>
+            <label class="cursor-pointer group">
+              <input type="radio" name="colorToken" value="slate" class="sr-only peer" />
+              <div class="p-2 rounded-xl bg-slate-bg border-2 border-transparent peer-checked:border-slate-accent peer-checked:ring-2 peer-checked:ring-slate-accent/30 flex flex-col items-center gap-1 transition-all text-center group-hover:scale-105">
+                <span class="w-4 h-4 rounded-full bg-slate-accent inline-block shadow-sm"></span>
+                <span class="text-[10px] font-medium text-slate-700 dark:text-slate-200">Slate</span>
               </div>
             </label>
           </div>
-        </div>
-
-        <div>
-          <label for="category-icon-select" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">Icon (Material Symbol)</label>
-          <select id="category-icon-select" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-sm text-slate-800 dark:text-slate-100 focus:border-lavender-accent focus:ring-1 focus:ring-lavender-accent transition-all bg-white dark:bg-slate-900">
-            <option value="book-open">Study & Reading (menu_book)</option>
-            <option value="briefcase">Work & Projects (work)</option>
-            <option value="heart">Health & Wellness (favorite)</option>
-            <option value="check-circle">Habits & Routine (task_alt)</option>
-            <option value="sparkles">Hobbies & Creativity (auto_awesome)</option>
-            <option value="shopping-cart">Groceries & Errands (shopping_cart)</option>
-            <option value="fitness">Fitness & Exercise (fitness_center)</option>
-            <option value="code">Coding & Dev (code)</option>
-          </select>
         </div>
 
         <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
@@ -535,6 +674,134 @@
     </div>
   </dialog>
 
+  <!-- 2c. Sticky Note Creation / Edit Modal -->
+  <dialog id="note-modal" class="rounded-3xl bg-surface dark:bg-[#131B2E] p-0 shadow-xl max-w-md w-[calc(100%-2rem)] mx-auto border border-slate-200 dark:border-slate-800" aria-labelledby="note-modal-title">
+    <div class="p-6">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-butter-bg text-amber-600 flex items-center justify-center">
+            <span class="material-symbols-outlined text-lg">sticky_note_2</span>
+          </div>
+          <h2 id="note-modal-title" class="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-100">New Sticky Note</h2>
+        </div>
+        <button type="button" id="note-modal-close-btn" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" aria-label="Close modal">
+          <span class="material-symbols-outlined text-xl">close</span>
+        </button>
+      </div>
+
+      <form id="note-form" class="mt-5 space-y-4">
+        <input type="hidden" id="note-id-input" value="" />
+
+        <div>
+          <label for="note-title-input" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">Note Title (Optional)</label>
+          <input type="text" id="note-title-input" maxlength="80" placeholder="e.g., Quick idea, Project thoughts, Study reminder" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition-all" />
+        </div>
+
+        <div>
+          <label for="note-content-input" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">Content</label>
+          <textarea id="note-content-input" required rows="4" placeholder="Write your note here..." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition-all resize-y"></textarea>
+        </div>
+
+        <!-- Pastel Note Color Theme -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Note Color</label>
+          <div class="grid grid-cols-5 gap-2" id="note-color-selector">
+            <label class="cursor-pointer group">
+              <input type="radio" name="noteColor" value="butter" class="sr-only peer" checked />
+              <div class="p-2 rounded-xl bg-butter-bg border-2 border-transparent peer-checked:border-amber-400 peer-checked:ring-2 peer-checked:ring-amber-400/30 flex flex-col items-center gap-1 transition-all text-center group-hover:scale-105">
+                <span class="w-4 h-4 rounded-full bg-butter-accent inline-block shadow-sm"></span>
+                <span class="text-[10px] font-medium text-slate-700 dark:text-slate-200">Butter</span>
+              </div>
+            </label>
+            <label class="cursor-pointer group">
+              <input type="radio" name="noteColor" value="peach" class="sr-only peer" />
+              <div class="p-2 rounded-xl bg-peach-bg border-2 border-transparent peer-checked:border-rose-400 peer-checked:ring-2 peer-checked:ring-rose-400/30 flex flex-col items-center gap-1 transition-all text-center group-hover:scale-105">
+                <span class="w-4 h-4 rounded-full bg-peach-accent inline-block shadow-sm"></span>
+                <span class="text-[10px] font-medium text-slate-700 dark:text-slate-200">Peach</span>
+              </div>
+            </label>
+            <label class="cursor-pointer group">
+              <input type="radio" name="noteColor" value="mint" class="sr-only peer" />
+              <div class="p-2 rounded-xl bg-mint-bg border-2 border-transparent peer-checked:border-emerald-400 peer-checked:ring-2 peer-checked:ring-emerald-400/30 flex flex-col items-center gap-1 transition-all text-center group-hover:scale-105">
+                <span class="w-4 h-4 rounded-full bg-mint-accent inline-block shadow-sm"></span>
+                <span class="text-[10px] font-medium text-slate-700 dark:text-slate-200">Mint</span>
+              </div>
+            </label>
+            <label class="cursor-pointer group">
+              <input type="radio" name="noteColor" value="sky" class="sr-only peer" />
+              <div class="p-2 rounded-xl bg-sky-bg border-2 border-transparent peer-checked:border-sky-400 peer-checked:ring-2 peer-checked:ring-sky-400/30 flex flex-col items-center gap-1 transition-all text-center group-hover:scale-105">
+                <span class="w-4 h-4 rounded-full bg-sky-accent inline-block shadow-sm"></span>
+                <span class="text-[10px] font-medium text-slate-700 dark:text-slate-200">Sky</span>
+              </div>
+            </label>
+            <label class="cursor-pointer group">
+              <input type="radio" name="noteColor" value="lavender" class="sr-only peer" />
+              <div class="p-2 rounded-xl bg-lavender-bg border-2 border-transparent peer-checked:border-indigo-400 peer-checked:ring-2 peer-checked:ring-indigo-400/30 flex flex-col items-center gap-1 transition-all text-center group-hover:scale-105">
+                <span class="w-4 h-4 rounded-full bg-lavender-accent inline-block shadow-sm"></span>
+                <span class="text-[10px] font-medium text-slate-700 dark:text-slate-200">Lavender</span>
+              </div>
+            </label>
+            <label class="cursor-pointer group">
+              <input type="radio" name="noteColor" value="coral" class="sr-only peer" />
+              <div class="p-2 rounded-xl bg-coral-bg border-2 border-transparent peer-checked:border-orange-400 peer-checked:ring-2 peer-checked:ring-orange-400/30 flex flex-col items-center gap-1 transition-all text-center group-hover:scale-105">
+                <span class="w-4 h-4 rounded-full bg-coral-accent inline-block shadow-sm"></span>
+                <span class="text-[10px] font-medium text-slate-700 dark:text-slate-200">Coral</span>
+              </div>
+            </label>
+            <label class="cursor-pointer group">
+              <input type="radio" name="noteColor" value="violet" class="sr-only peer" />
+              <div class="p-2 rounded-xl bg-violet-bg border-2 border-transparent peer-checked:border-purple-400 peer-checked:ring-2 peer-checked:ring-purple-400/30 flex flex-col items-center gap-1 transition-all text-center group-hover:scale-105">
+                <span class="w-4 h-4 rounded-full bg-violet-accent inline-block shadow-sm"></span>
+                <span class="text-[10px] font-medium text-slate-700 dark:text-slate-200">Violet</span>
+              </div>
+            </label>
+            <label class="cursor-pointer group">
+              <input type="radio" name="noteColor" value="teal" class="sr-only peer" />
+              <div class="p-2 rounded-xl bg-teal-bg border-2 border-transparent peer-checked:border-teal-400 peer-checked:ring-2 peer-checked:ring-teal-400/30 flex flex-col items-center gap-1 transition-all text-center group-hover:scale-105">
+                <span class="w-4 h-4 rounded-full bg-teal-accent inline-block shadow-sm"></span>
+                <span class="text-[10px] font-medium text-slate-700 dark:text-slate-200">Teal</span>
+              </div>
+            </label>
+            <label class="cursor-pointer group">
+              <input type="radio" name="noteColor" value="sage" class="sr-only peer" />
+              <div class="p-2 rounded-xl bg-sage-bg border-2 border-transparent peer-checked:border-lime-500 peer-checked:ring-2 peer-checked:ring-lime-500/30 flex flex-col items-center gap-1 transition-all text-center group-hover:scale-105">
+                <span class="w-4 h-4 rounded-full bg-sage-accent inline-block shadow-sm"></span>
+                <span class="text-[10px] font-medium text-slate-700 dark:text-slate-200">Sage</span>
+              </div>
+            </label>
+            <label class="cursor-pointer group">
+              <input type="radio" name="noteColor" value="slate" class="sr-only peer" />
+              <div class="p-2 rounded-xl bg-slate-bg border-2 border-transparent peer-checked:border-slate-500 peer-checked:ring-2 peer-checked:ring-slate-500/30 flex flex-col items-center gap-1 transition-all text-center group-hover:scale-105">
+                <span class="w-4 h-4 rounded-full bg-slate-accent inline-block shadow-sm"></span>
+                <span class="text-[10px] font-medium text-slate-700 dark:text-slate-200">Slate</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Mark as Important Toggle -->
+        <div class="border border-slate-200 dark:border-slate-800 rounded-xl p-3 bg-amber-50/40 dark:bg-amber-950/20 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-amber-500 text-lg">star</span>
+            <div>
+              <span class="block text-xs font-semibold text-slate-700 dark:text-slate-200">Mark as Important</span>
+              <span class="text-[11px] text-slate-400 dark:text-slate-500">Pin to Homescreen</span>
+            </div>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="note-important-toggle" class="sr-only peer" />
+            <div class="w-10 h-5 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500"></div>
+          </label>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+          <button type="button" id="note-cancel-btn" class="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Cancel</button>
+          <button type="submit" id="note-submit-btn" class="px-5 py-2.5 rounded-xl text-sm font-semibold bg-slate-800 hover:bg-slate-900 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white shadow-sm transition-all">Save Note</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
   <!-- 3. Profile & Account Settings Modal -->
   <dialog id="profile-modal" class="rounded-2xl bg-surface dark:bg-[#131B2E] p-0 shadow-xl max-w-md w-[calc(100%-2rem)] mx-auto border border-slate-200 dark:border-slate-800" aria-labelledby="profile-modal-title">
     <div class="p-6">
@@ -653,6 +920,54 @@
       </div>
     </div>
   </dialog>
+
+  <!-- 7. Mobile Navigation Drawer Dialog -->
+  <dialog id="mobile-nav-drawer" class="rounded-3xl bg-surface dark:bg-[#131B2E] p-0 shadow-2xl max-w-xs w-[calc(100%-2rem)] mx-auto border border-slate-200 dark:border-slate-800" aria-labelledby="mobile-nav-title">
+    <div class="p-6">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-lavender-bg dark:bg-indigo-950/60 flex items-center justify-center text-lavender-accent">
+            <span class="material-symbols-outlined text-lg text-indigo-500">task_alt</span>
+          </div>
+          <h2 id="mobile-nav-title" class="text-base font-bold text-slate-800 dark:text-slate-100">Daylign</h2>
+        </div>
+        <button type="button" id="mobile-nav-close-btn" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" aria-label="Close navigation menu">
+          <span class="material-symbols-outlined text-xl">close</span>
+        </button>
+      </div>
+
+      <nav class="mt-4 flex flex-col gap-1.5" aria-label="Mobile Navigation">
+        <a href="#/" id="mobile-link-home" class="px-4 py-3 rounded-2xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-3 transition-colors">
+          <span class="material-symbols-outlined text-xl text-indigo-500">home</span>
+          Home
+        </a>
+        <a href="#/activities" id="mobile-link-activities" class="px-4 py-3 rounded-2xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-3 transition-colors">
+          <span class="material-symbols-outlined text-xl text-emerald-500">category</span>
+          Activities
+        </a>
+        <a href="#/notes" id="mobile-link-notes" class="px-4 py-3 rounded-2xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-3 transition-colors">
+          <span class="material-symbols-outlined text-xl text-amber-500">sticky_note_2</span>
+          Notes
+        </a>
+      </nav>
+    </div>
+  </dialog>
+
+  <!-- Scroll-to-Top Floating Button -->
+  <button id="scroll-to-top-btn" class="fixed bottom-5 left-5 z-40 p-3 rounded-full bg-surface dark:bg-[#131B2E] border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 shadow-lg hover:shadow-xl transition-all opacity-0 pointer-events-none translate-y-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-lavender" aria-label="Scroll back to top">
+    <span class="material-symbols-outlined text-xl">arrow_upward</span>
+  </button>
+
+  <!-- Cookie Consent Banner -->
+  <aside id="cookie-consent-banner" class="hidden fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:max-w-md z-50 p-4 rounded-2xl bg-surface/95 dark:bg-[#131B2E]/95 backdrop-blur-md border border-slate-200 dark:border-slate-800 shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs" role="region" aria-label="Cookie consent">
+    <div class="flex items-start gap-2.5">
+      <span class="material-symbols-outlined text-indigo-500 text-lg flex-shrink-0 mt-0.5">cookie</span>
+      <p class="text-slate-600 dark:text-slate-300">We use essential local storage & cookies to keep your session secure and save your preferences.</p>
+    </div>
+    <div class="flex items-center gap-2 self-end sm:self-auto flex-shrink-0">
+      <button type="button" id="cookie-accept-btn" class="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-900 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white font-semibold text-xs shadow-sm transition-all cursor-pointer">Got it</button>
+    </div>
+  </aside>
 
   <!-- Footer -->
   <footer class="mt-auto border-t border-slate-200 dark:border-slate-800 py-6 text-center text-xs text-slate-400 dark:text-slate-500 transition-colors">
