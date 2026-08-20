@@ -423,7 +423,11 @@ export function openNoteModal(uid, editNote = null, onSaved) {
     if (submitBtn) submitBtn.textContent = "Create Note";
   }
 
-  const handleDismiss = () => {
+  const handleDismiss = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     modal.close();
   };
 
@@ -440,11 +444,11 @@ export function openNoteModal(uid, editNote = null, onSaved) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const content = contentInput?.value.trim();
-    const title = titleInput?.value.trim();
+    const content = (contentInput?.value || "").trim();
+    const title = (titleInput?.value || "").trim();
     if (!content && !title) {
-      notify("Note content or title is required", "error");
-      contentInput?.focus();
+      notify("Please enter a note title or content", "error");
+      (titleInput || contentInput)?.focus();
       return;
     }
 
@@ -463,7 +467,7 @@ export function openNoteModal(uid, editNote = null, onSaved) {
         notify("Note updated", "success");
       } else {
         await createNote(uid, { title, content, colorToken, isImportant });
-        notify(isImportant ? "Note created and pinned to Homescreen" : "Note created", "success");
+        notify(isImportant ? "Note created and pinned to Homescreen ⭐" : "Note created", "success");
       }
       modal.close();
       if (typeof onSaved === "function") onSaved();
@@ -484,7 +488,11 @@ export function openNoteModal(uid, editNote = null, onSaved) {
   modal.addEventListener("close", handleClose);
 
   modal.showModal();
-  if (contentInput) contentInput.focus();
+  if (titleInput && !editNote?.title) {
+    titleInput.focus();
+  } else if (contentInput) {
+    contentInput.focus();
+  }
 }
 
 /* ==========================================================================
@@ -575,19 +583,33 @@ export function initModalBackdrops() {
     });
   });
 
-  // Also wire profile-modal and guest-help-modal close buttons
-  document.getElementById("profile-modal-close-btn")?.addEventListener("click", () => {
-    document.getElementById("profile-modal")?.close();
-  });
-  document.getElementById("profile-modal-close-btn-bottom")?.addEventListener("click", () => {
-    document.getElementById("profile-modal")?.close();
-  });
-  document.getElementById("guest-help-modal-close-btn")?.addEventListener("click", () => {
-    document.getElementById("guest-help-modal")?.close();
-  });
-  document.getElementById("guest-help-close-btn")?.addEventListener("click", () => {
-    document.getElementById("guest-help-modal")?.close();
-  });
+  // Permanently wire all modal close and cancel buttons across the app
+  const wireClose = (btnId, modalId) => {
+    const btn = document.getElementById(btnId);
+    const modal = document.getElementById(modalId);
+    if (btn && modal) {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        modal.close();
+      });
+    }
+  };
+
+  wireClose("category-modal-close-btn", "category-modal");
+  wireClose("category-cancel-btn", "category-modal");
+  wireClose("checklist-modal-close-btn", "checklist-modal");
+  wireClose("checklist-cancel-btn", "checklist-modal");
+  wireClose("checklist-settings-close-btn", "checklist-settings-modal");
+  wireClose("checklist-settings-cancel-btn", "checklist-settings-modal");
+  wireClose("note-modal-close-btn", "note-modal");
+  wireClose("note-cancel-btn", "note-modal");
+  wireClose("profile-modal-close-btn", "profile-modal");
+  wireClose("profile-modal-done-btn", "profile-modal");
+  wireClose("guest-help-modal-close-btn", "guest-help-modal");
+  wireClose("guest-help-close-btn", "guest-help-modal");
+  wireClose("confirm-cancel-btn", "confirm-modal");
+  wireClose("mobile-nav-close-btn", "mobile-nav-drawer");
 }
 
 export default {

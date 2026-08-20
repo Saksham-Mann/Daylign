@@ -731,9 +731,15 @@ export async function runDailyResetCheck(uid) {
  */
 export function subscribeNotes(uid, callback, onError) {
   if (!uid) return () => {};
-  const q = query(getNotesCol(uid), orderBy("createdAt", "desc"));
+  const q = getNotesCol(uid);
   return onSnapshot(q, (snapshot) => {
     const notes = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+    // Sort in memory by createdAt descending (fallback to updatedAt or 0)
+    notes.sort((a, b) => {
+      const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt ? new Date(a.createdAt).getTime() : (a.updatedAt?.toMillis ? a.updatedAt.toMillis() : 0));
+      const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt ? new Date(b.createdAt).getTime() : (b.updatedAt?.toMillis ? b.updatedAt.toMillis() : 0));
+      return timeB - timeA;
+    });
     if (typeof callback === "function") callback(notes);
   }, (err) => {
     console.warn("[DB:subscribeNotes] Error:", err.message);
@@ -746,9 +752,15 @@ export function subscribeNotes(uid, callback, onError) {
  */
 export async function getNotes(uid) {
   if (!uid) return [];
-  const q = query(getNotesCol(uid), orderBy("createdAt", "desc"));
+  const q = getNotesCol(uid);
   const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  const notes = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  notes.sort((a, b) => {
+    const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
+    const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
+    return timeB - timeA;
+  });
+  return notes;
 }
 
 /**
@@ -756,13 +768,15 @@ export async function getNotes(uid) {
  */
 export async function createNote(uid, data) {
   if (!uid) throw new Error("User ID is required.");
-  if (!data.content?.trim() && !data.title?.trim()) {
-    throw new Error("Note content or title is required.");
+  const title = (data.title || "").trim();
+  const content = (data.content || "").trim();
+  if (!title && !content) {
+    throw new Error("Please enter a note title or content.");
   }
 
   const noteData = {
-    title: (data.title || "").trim(),
-    content: (data.content || "").trim(),
+    title,
+    content,
     colorToken: data.colorToken || "butter",
     isImportant: Boolean(data.isImportant),
     createdAt: serverTimestamp(),

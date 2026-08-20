@@ -284,7 +284,7 @@ export function renderNotes(container, uid) {
           <!-- Note Content -->
           <div class="space-y-1.5 flex-1">
             ${note.title ? `<h3 class="text-sm font-bold ${theme.text} leading-snug tracking-tight">${escapeHtml(note.title)}</h3>` : ""}
-            <p class="text-xs ${theme.text} leading-relaxed whitespace-pre-wrap break-words">${escapeHtml(note.content)}</p>
+            ${note.content ? `<p class="text-xs ${theme.text} leading-relaxed whitespace-pre-wrap break-words ${note.title ? 'mt-1' : ''}">${escapeHtml(note.content)}</p>` : ""}
           </div>
 
           <!-- Note Footer Timestamp -->
