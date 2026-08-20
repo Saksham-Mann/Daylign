@@ -205,7 +205,7 @@ export function renderHome(container, uid) {
         <!-- Quick Metric Badges -->
         <div class="flex items-center gap-2.5 flex-wrap">
           <div class="px-3.5 py-2 rounded-2xl bg-surface dark:bg-[#131B2E] border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-2">
-            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span class="material-symbols-outlined text-emerald-500 text-base">timer</span>
             <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">
               <strong id="home-stat-timers" class="text-emerald-600 dark:text-emerald-400">0</strong> Active Timers
             </span>
@@ -231,7 +231,7 @@ export function renderHome(container, uid) {
       <div class="space-y-3.5">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+            <span class="material-symbols-outlined text-emerald-500 text-xl">timer</span>
             <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight">Active Timers & Focus</h2>
           </div>
           <span id="active-timers-count-badge" class="text-xs font-semibold text-slate-400 dark:text-slate-500">0 active</span>
@@ -366,7 +366,7 @@ export function renderHome(container, uid) {
           <!-- Live Stopwatch Display & Actions -->
           <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
             <div class="flex items-center gap-1.5 font-mono text-base font-bold text-emerald-600 dark:text-emerald-400">
-              <span class="material-symbols-outlined text-lg animate-spin" style="animation-duration: 3s;">progress_activity</span>
+              <span class="material-symbols-outlined text-lg text-emerald-600 dark:text-emerald-400">timer</span>
               <span id="live-timer-${task.id}">${formatDuration(initialSeconds)}</span>
             </div>
 
@@ -503,7 +503,7 @@ export function renderHome(container, uid) {
           <!-- Note Body -->
           <div class="space-y-1 flex-1">
             ${note.title ? `<h3 class="text-xs font-bold ${theme.text} leading-snug tracking-tight">${escapeHtml(note.title)}</h3>` : ""}
-            <p class="text-xs ${theme.text} line-clamp-4 whitespace-pre-wrap">${escapeHtml(note.content)}</p>
+            ${note.content ? `<p class="text-xs ${theme.text} line-clamp-4 whitespace-pre-wrap ${note.title ? 'mt-1' : ''}">${escapeHtml(note.content)}</p>` : ""}
           </div>
 
           <!-- Note Footer Pin Label -->

@@ -455,7 +455,7 @@ function renderTasksList(container, uid, checklistId, tasks, options = {}) {
             <div class="flex items-center gap-1.5">
               ${isRunning ? `
                 <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-100/70 dark:bg-emerald-950/70 border border-emerald-300 dark:border-emerald-700" aria-live="polite">
-                  <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                  <span class="material-symbols-outlined text-emerald-600 dark:text-emerald-400 text-sm">timer</span>
                   <span class="font-mono text-xs font-bold text-emerald-800 dark:text-emerald-300 task-live-counter" data-id="${task.id}">
                     ${formatDuration(accumulated)}
                   </span>
