@@ -357,27 +357,40 @@ export function renderNotes(container, uid) {
     });
   };
 
-  // Real-time Firestore subscription
-  const unsubscribe = subscribeNotes(uid, (notes) => {
-    rawNotes = notes;
-    renderGrid();
-  }, (err) => {
-    console.error("[Notes:subscribeNotes] Error:", err);
-    const grid = container.querySelector("#notes-grid");
-    if (grid) {
-      renderSectionError(grid, {
-        title: "Could not load sticky notes",
-        message: "An error occurred while syncing your notes. Please check your connection.",
-        icon: "cloud_off",
-        retryFn: () => {
-          window.location.reload();
-        }
-      });
+  // Real-time Firestore & local subscription
+  let unsubscribeNotesFn = null;
+
+  const initSubscription = () => {
+    if (typeof unsubscribeNotesFn === "function") {
+      unsubscribeNotesFn();
+      unsubscribeNotesFn = null;
     }
-  });
+
+    unsubscribeNotesFn = subscribeNotes(uid, (notes) => {
+      rawNotes = notes;
+      renderGrid();
+    }, (err) => {
+      console.error("[Notes:subscribeNotes] Error:", err);
+      const grid = container.querySelector("#notes-grid");
+      if (grid) {
+        renderSectionError(grid, {
+          title: "Could not load sticky notes",
+          message: "An error occurred while syncing notes from the cloud. You can still create and manage local notes.",
+          icon: "cloud_off",
+          retryFn: () => {
+            initSubscription();
+          }
+        });
+      }
+    });
+  };
+
+  initSubscription();
 
   return () => {
-    unsubscribe();
+    if (typeof unsubscribeNotesFn === "function") {
+      unsubscribeNotesFn();
+    }
   };
 }
 

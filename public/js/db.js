@@ -719,8 +719,30 @@ export async function runDailyResetCheck(uid) {
 }
 
 /* ==========================================================================
-   6. STICKY NOTES CRUD OPERATIONS
+   6. STICKY NOTES CRUD OPERATIONS (Hybrid Firestore & Local Resilient Storage)
    ========================================================================== */
+
+const getLocalNotesKey = (uid) => `daylign_notes_${uid}`;
+
+function getLocalNotes(uid) {
+  if (!uid) return [];
+  try {
+    const raw = localStorage.getItem(getLocalNotesKey(uid));
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveLocalNotes(uid, notes) {
+  if (!uid) return;
+  try {
+    localStorage.setItem(getLocalNotesKey(uid), JSON.stringify(notes));
+    window.dispatchEvent(new CustomEvent(`daylign_notes_changed_${uid}`, { detail: notes }));
+  } catch (e) {
+    console.warn("[LocalNotes] Save failed:", e);
+  }
+}
 
 /**
  * Subscribe to real-time updates of user sticky notes.
@@ -731,20 +753,56 @@ export async function runDailyResetCheck(uid) {
  */
 export function subscribeNotes(uid, callback, onError) {
   if (!uid) return () => {};
-  const q = getNotesCol(uid);
-  return onSnapshot(q, (snapshot) => {
-    const notes = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
-    // Sort in memory by createdAt descending (fallback to updatedAt or 0)
-    notes.sort((a, b) => {
-      const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt ? new Date(a.createdAt).getTime() : (a.updatedAt?.toMillis ? a.updatedAt.toMillis() : 0));
-      const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt ? new Date(b.createdAt).getTime() : (b.updatedAt?.toMillis ? b.updatedAt.toMillis() : 0));
+
+  const handleLocalChange = () => {
+    const localNotes = getLocalNotes(uid);
+    localNotes.sort((a, b) => {
+      const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
+      const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
       return timeB - timeA;
     });
-    if (typeof callback === "function") callback(notes);
-  }, (err) => {
-    console.warn("[DB:subscribeNotes] Error:", err.message);
-    if (typeof onError === "function") onError(err);
-  });
+    if (typeof callback === "function") callback(localNotes);
+  };
+
+  const eventName = `daylign_notes_changed_${uid}`;
+  window.addEventListener(eventName, handleLocalChange);
+
+  // Deliver cached notes immediately
+  handleLocalChange();
+
+  let unsubscribeFirestore = () => {};
+
+  try {
+    const q = getNotesCol(uid);
+    unsubscribeFirestore = onSnapshot(q, (snapshot) => {
+      const notes = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+      notes.sort((a, b) => {
+        const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt ? new Date(a.createdAt).getTime() : (a.updatedAt?.toMillis ? a.updatedAt.toMillis() : 0));
+        const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt ? new Date(b.createdAt).getTime() : (b.updatedAt?.toMillis ? b.updatedAt.toMillis() : 0));
+        return timeB - timeA;
+      });
+      // Update local cache
+      try {
+        localStorage.setItem(getLocalNotesKey(uid), JSON.stringify(notes));
+      } catch (_) {}
+      if (typeof callback === "function") callback(notes);
+    }, (err) => {
+      console.warn("[DB:subscribeNotes] Firestore sync warning (" + err.message + "), using local notes.");
+      handleLocalChange();
+      // Only invoke onError if we don't even have local notes
+      if (typeof onError === "function" && getLocalNotes(uid).length === 0) {
+        onError(err);
+      }
+    });
+  } catch (err) {
+    console.warn("[DB:subscribeNotes] Init error:", err);
+    handleLocalChange();
+  }
+
+  return () => {
+    window.removeEventListener(eventName, handleLocalChange);
+    if (typeof unsubscribeFirestore === "function") unsubscribeFirestore();
+  };
 }
 
 /**
@@ -752,15 +810,20 @@ export function subscribeNotes(uid, callback, onError) {
  */
 export async function getNotes(uid) {
   if (!uid) return [];
-  const q = getNotesCol(uid);
-  const snap = await getDocs(q);
-  const notes = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-  notes.sort((a, b) => {
-    const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
-    const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
-    return timeB - timeA;
-  });
-  return notes;
+  try {
+    const q = getNotesCol(uid);
+    const snap = await getDocs(q);
+    const notes = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    notes.sort((a, b) => {
+      const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
+      const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
+      return timeB - timeA;
+    });
+    return notes;
+  } catch (err) {
+    console.warn("[DB:getNotes] Firestore fetch failed, returning local notes:", err.message);
+    return getLocalNotes(uid);
+  }
 }
 
 /**
@@ -774,17 +837,36 @@ export async function createNote(uid, data) {
     throw new Error("Please enter a note title or content.");
   }
 
+  const nowIso = new Date().toISOString();
   const noteData = {
     title,
     content,
     colorToken: data.colorToken || "butter",
     isImportant: Boolean(data.isImportant),
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp()
+    createdAt: nowIso,
+    updatedAt: nowIso
   };
 
-  const docRef = await addDoc(getNotesCol(uid), noteData);
-  return { id: docRef.id, ...noteData };
+  try {
+    const docRef = await addDoc(getNotesCol(uid), {
+      ...noteData,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+    const result = { id: docRef.id, ...noteData };
+    const current = getLocalNotes(uid);
+    current.unshift(result);
+    saveLocalNotes(uid, current);
+    return result;
+  } catch (err) {
+    console.warn("[DB:createNote] Firestore write failed (" + err.message + "), saved to local resilient store.");
+    const localId = `note_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const result = { id: localId, ...noteData };
+    const current = getLocalNotes(uid);
+    current.unshift(result);
+    saveLocalNotes(uid, current);
+    return result;
+  }
 }
 
 /**
@@ -792,12 +874,29 @@ export async function createNote(uid, data) {
  */
 export async function updateNote(uid, noteId, updates) {
   if (!uid || !noteId) throw new Error("Missing parameters.");
-  const noteRef = doc(db, "users", uid, "notes", noteId);
   const payload = {
     ...updates,
-    updatedAt: serverTimestamp()
+    updatedAt: new Date().toISOString()
   };
-  await updateDoc(noteRef, payload);
+
+  // Update local store
+  const current = getLocalNotes(uid);
+  const idx = current.findIndex((n) => n.id === noteId);
+  if (idx !== -1) {
+    current[idx] = { ...current[idx], ...payload };
+    saveLocalNotes(uid, current);
+  }
+
+  try {
+    const noteRef = doc(db, "users", uid, "notes", noteId);
+    await updateDoc(noteRef, {
+      ...updates,
+      updatedAt: serverTimestamp()
+    });
+  } catch (err) {
+    console.warn("[DB:updateNote] Firestore update failed, saved locally:", err.message);
+  }
+
   return { id: noteId, ...payload };
 }
 
@@ -806,8 +905,19 @@ export async function updateNote(uid, noteId, updates) {
  */
 export async function deleteNote(uid, noteId) {
   if (!uid || !noteId) throw new Error("Missing parameters.");
-  const noteRef = doc(db, "users", uid, "notes", noteId);
-  await deleteDoc(noteRef);
+
+  // Remove from local store
+  const current = getLocalNotes(uid);
+  const filtered = current.filter((n) => n.id !== noteId);
+  saveLocalNotes(uid, filtered);
+
+  try {
+    const noteRef = doc(db, "users", uid, "notes", noteId);
+    await deleteDoc(noteRef);
+  } catch (err) {
+    console.warn("[DB:deleteNote] Firestore delete failed, removed locally:", err.message);
+  }
+
   return { id: noteId, success: true };
 }
 
