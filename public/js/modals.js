@@ -741,6 +741,17 @@ export function openStickyNotePad(uid, note, onSaved) {
     modal.close();
   };
 
+  const colorBtn = document.getElementById("sticky-note-pad-color-btn");
+
+  const handleColorBtnClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (paletteMenu) {
+      paletteMenu.classList.toggle("hidden");
+      paletteMenu.classList.toggle("flex");
+    }
+  };
+
   const handlePaletteClick = async (e) => {
     const btn = e.target.closest("button[data-color]");
     if (!btn) return;
@@ -750,6 +761,10 @@ export function openStickyNotePad(uid, note, onSaved) {
     if (newColor && newColor !== currentColor) {
       applyTheme(newColor);
       await saveNote(true);
+    }
+    if (paletteMenu) {
+      paletteMenu.classList.add("hidden");
+      paletteMenu.classList.remove("flex");
     }
   };
 
@@ -768,6 +783,7 @@ export function openStickyNotePad(uid, note, onSaved) {
     deleteBtn?.removeEventListener("click", handleDeleteClick);
     saveBtn?.removeEventListener("click", handleSaveClick);
     closeBtn?.removeEventListener("click", handleDismiss);
+    colorBtn?.removeEventListener("click", handleColorBtnClick);
     paletteMenu?.removeEventListener("click", handlePaletteClick);
     window.removeEventListener("keydown", handleKeyDown);
     modal.removeEventListener("close", handleClose);
@@ -779,6 +795,7 @@ export function openStickyNotePad(uid, note, onSaved) {
   deleteBtn?.addEventListener("click", handleDeleteClick);
   saveBtn?.addEventListener("click", handleSaveClick);
   closeBtn?.addEventListener("click", handleDismiss);
+  colorBtn?.addEventListener("click", handleColorBtnClick);
   paletteMenu?.addEventListener("click", handlePaletteClick);
   window.addEventListener("keydown", handleKeyDown);
   modal.addEventListener("close", handleClose);

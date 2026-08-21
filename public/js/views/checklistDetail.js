@@ -494,7 +494,7 @@ function renderTasksList(container, uid, checklistId, tasks, options = {}) {
           : isCompleted
           ? "border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40"
           : "border-slate-200 dark:border-slate-800 bg-surface dark:bg-[#131B2E] hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-subtle"
-      } p-3.5 flex items-center justify-between gap-3 transition-all duration-200" data-task-id="${task.id}" role="listitem" title="Created: ${createdDateStr}&#10;Finished: ${finishedDateStr}">
+      } p-3 sm:p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 transition-all duration-200" data-task-id="${task.id}" role="listitem" title="Created: ${createdDateStr}&#10;Finished: ${finishedDateStr}">
         
         <!-- Left: Checkbox + Title / Inline Edit + Dates -->
         <div class="flex items-center gap-3 flex-1 min-w-0">
@@ -522,8 +522,8 @@ function renderTasksList(container, uid, checklistId, tasks, options = {}) {
           </div>
         </div>
 
-        <!-- Right: Stopwatch Controls, Reorder & Options -->
-        <div class="flex items-center gap-2 flex-shrink-0">
+        <!-- Right / Bottom: Stopwatch Controls, Reorder & Options -->
+        <div class="flex items-center justify-between sm:justify-end gap-2 flex-shrink-0 pt-1 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-slate-800/80">
           
           <!-- Timer Controls -->
           ${timerEnabled ? `
@@ -562,20 +562,23 @@ function renderTasksList(container, uid, checklistId, tasks, options = {}) {
             ` : ""}
           `}
 
-          <!-- Reorder Handles (Up / Down) - Crisp, high contrast and accessible -->
-          <div class="flex items-center gap-0.5">
-            <button type="button" class="reorder-up-btn p-1 text-slate-600 hover:text-indigo-600 dark:text-slate-300 dark:hover:text-indigo-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-20 disabled:pointer-events-none" data-id="${task.id}" data-index="${index}" ${index === 0 ? "disabled" : ""} title="Move task up" aria-label="Move task up: ${escapeHtml(task.title)}">
-              <span class="material-symbols-outlined text-base font-semibold">arrow_upward</span>
-            </button>
-            <button type="button" class="reorder-down-btn p-1 text-slate-600 hover:text-indigo-600 dark:text-slate-300 dark:hover:text-indigo-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-20 disabled:pointer-events-none" data-id="${task.id}" data-index="${index}" ${index === tasks.length - 1 ? "disabled" : ""} title="Move task down" aria-label="Move task down: ${escapeHtml(task.title)}">
-              <span class="material-symbols-outlined text-base font-semibold">arrow_downward</span>
+          <!-- Reorder & Action Buttons -->
+          <div class="flex items-center gap-1">
+            <!-- Reorder Handles (Up / Down) -->
+            <div class="flex items-center gap-0.5 bg-slate-100 dark:bg-slate-800/80 sm:bg-transparent rounded-lg p-0.5 sm:p-0">
+              <button type="button" class="reorder-up-btn p-1.5 sm:p-1 text-slate-600 hover:text-indigo-600 dark:text-slate-300 dark:hover:text-indigo-400 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-20 disabled:pointer-events-none" data-id="${task.id}" data-index="${index}" ${index === 0 ? "disabled" : ""} title="Move task up" aria-label="Move task up: ${escapeHtml(task.title)}">
+                <span class="material-symbols-outlined text-base font-semibold">arrow_upward</span>
+              </button>
+              <button type="button" class="reorder-down-btn p-1.5 sm:p-1 text-slate-600 hover:text-indigo-600 dark:text-slate-300 dark:hover:text-indigo-400 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-20 disabled:pointer-events-none" data-id="${task.id}" data-index="${index}" ${index === tasks.length - 1 ? "disabled" : ""} title="Move task down" aria-label="Move task down: ${escapeHtml(task.title)}">
+                <span class="material-symbols-outlined text-base font-semibold">arrow_downward</span>
+              </button>
+            </div>
+
+            <!-- Delete Task Button -->
+            <button type="button" class="delete-task-btn p-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors" data-id="${task.id}" title="Delete task" aria-label="Delete task: ${escapeHtml(task.title)}">
+              <span class="material-symbols-outlined text-lg">delete</span>
             </button>
           </div>
-
-          <!-- Delete Task Button - High contrast, clearly clickable -->
-          <button type="button" class="delete-task-btn p-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors" data-id="${task.id}" title="Delete task" aria-label="Delete task: ${escapeHtml(task.title)}">
-            <span class="material-symbols-outlined text-lg">delete</span>
-          </button>
 
         </div>
       </li>

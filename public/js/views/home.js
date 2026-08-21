@@ -193,9 +193,9 @@ export function renderHome(container, uid) {
   container.innerHTML = `
     <section class="space-y-8" aria-labelledby="home-heading">
       <!-- 1. Top Welcome Banner & Quick Metric Badges -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-transparent dark:from-indigo-950/30 dark:via-purple-950/20 p-6 sm:p-7 rounded-3xl border border-indigo-100 dark:border-indigo-900/40 shadow-sm">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-transparent dark:from-indigo-950/30 dark:via-purple-950/20 p-4.5 sm:p-7 rounded-2xl sm:rounded-3xl border border-indigo-100 dark:border-indigo-900/40 shadow-sm">
         <div>
-          <h1 id="home-heading" class="text-2xl sm:text-3xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">
+          <h1 id="home-heading" class="text-xl sm:text-3xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">
             Today's Focus & Activities
           </h1>
           <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
@@ -204,22 +204,22 @@ export function renderHome(container, uid) {
         </div>
 
         <!-- Quick Metric Badges -->
-        <div class="flex items-center gap-2.5 flex-wrap">
-          <div class="px-3.5 py-2 rounded-2xl bg-surface dark:bg-[#131B2E] border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-2">
+        <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+          <div class="flex-1 min-w-[95px] sm:flex-initial px-3 sm:px-3.5 py-2 rounded-2xl bg-surface dark:bg-[#131B2E] border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-1.5 sm:gap-2">
             <span class="material-symbols-outlined text-emerald-500 text-base">timer</span>
             <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">
               <strong id="home-stat-timers" class="text-emerald-600 dark:text-emerald-400">0</strong> Active Timers
             </span>
           </div>
 
-          <div class="px-3.5 py-2 rounded-2xl bg-surface dark:bg-[#131B2E] border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-2">
+          <div class="flex-1 min-w-[95px] sm:flex-initial px-3 sm:px-3.5 py-2 rounded-2xl bg-surface dark:bg-[#131B2E] border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-1.5 sm:gap-2">
             <span class="material-symbols-outlined material-symbols-filled text-amber-500 text-base" style="font-variation-settings: 'FILL' 1;">star</span>
             <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">
               <strong id="home-stat-notes" class="text-amber-600 dark:text-amber-400">0</strong> Pinned Notes
             </span>
           </div>
 
-          <div class="px-3.5 py-2 rounded-2xl bg-surface dark:bg-[#131B2E] border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-2">
+          <div class="flex-1 min-w-[95px] sm:flex-initial px-3 sm:px-3.5 py-2 rounded-2xl bg-surface dark:bg-[#131B2E] border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-1.5 sm:gap-2">
             <span class="material-symbols-outlined text-indigo-500 text-base">task_alt</span>
             <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">
               <strong id="home-stat-tasks" class="text-indigo-600 dark:text-indigo-400">0%</strong> Done Today
