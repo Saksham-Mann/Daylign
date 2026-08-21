@@ -311,6 +311,11 @@
         padding: 0 !important;
       }
     }
+
+    /* Material Symbols filled variant helper */
+    .material-symbols-filled {
+      font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24 !important;
+    }
   </style>
 
   <!-- Chart.js CDN -->
@@ -583,12 +588,6 @@
           </div>
         </div>
 
-        <!-- Initial Tasks Section (Creation Only) -->
-        <div id="initial-tasks-section" class="pt-2">
-          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">Initial Tasks (Optional)</label>
-          <textarea id="initial-tasks-input" rows="3" placeholder="Add tasks (one per line):&#10;Read chapter 4&#10;Summarize notes&#10;Solve practice questions" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-lavender-accent focus:ring-1 focus:ring-lavender-accent transition-all"></textarea>
-        </div>
-
         <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
           <button type="button" id="checklist-cancel-btn" class="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Cancel</button>
           <button type="submit" id="checklist-submit-btn" class="px-5 py-2.5 rounded-xl text-sm font-semibold bg-slate-800 hover:bg-slate-900 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white shadow-sm transition-all">Create Checklist</button>
@@ -676,7 +675,7 @@
     </div>
   </dialog>
 
-  <!-- 2c. Sticky Note Creation / Edit Modal -->
+  <!-- 2c. Sticky Note Creation Modal (No content input) -->
   <dialog id="note-modal" class="rounded-3xl bg-surface dark:bg-[#131B2E] p-0 shadow-xl max-w-md w-[calc(100%-2rem)] mx-auto border border-slate-200 dark:border-slate-800" aria-labelledby="note-modal-title">
     <div class="p-6">
       <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
@@ -695,13 +694,8 @@
         <input type="hidden" id="note-id-input" value="" />
 
         <div>
-          <label for="note-title-input" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">Title / Heading</label>
+          <label for="note-title-input" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">Note Title</label>
           <input type="text" id="note-title-input" maxlength="120" placeholder="e.g., Quick idea, Project thoughts, Study reminder" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition-all" />
-        </div>
-
-        <div>
-          <label for="note-content-input" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">Content / Details</label>
-          <textarea id="note-content-input" rows="4" placeholder="Write your note here..." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition-all resize-y"></textarea>
         </div>
 
         <!-- Pastel Note Color Theme -->
@@ -798,13 +792,85 @@
 
         <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
           <button type="button" id="note-cancel-btn" class="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Cancel</button>
-          <button type="submit" id="note-submit-btn" class="px-5 py-2.5 rounded-xl text-sm font-semibold bg-slate-800 hover:bg-slate-900 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white shadow-sm transition-all">Save Note</button>
+          <button type="submit" id="note-submit-btn" class="px-5 py-2.5 rounded-xl text-sm font-semibold bg-slate-800 hover:bg-slate-900 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white shadow-sm transition-all">Create Note</button>
         </div>
       </form>
     </div>
   </dialog>
 
-  <!-- 3. Profile & Account Settings Modal -->
+  <!-- 2d. Interactive Color-Specific Sticky Note Pad Modal -->
+  <dialog id="sticky-note-pad-modal" class="rounded-3xl p-0 shadow-2xl max-w-xl w-[calc(100%-2rem)] mx-auto border transition-colors duration-200 backdrop:bg-black/50 backdrop:backdrop-blur-sm focus:outline-none" aria-labelledby="sticky-note-pad-title">
+    <div id="sticky-note-pad-wrapper" class="p-6 sm:p-7 rounded-3xl transition-colors duration-200 flex flex-col justify-between min-h-[420px] sm:min-h-[480px]">
+      <!-- Top Note Bar -->
+      <div>
+        <div class="flex items-center justify-between gap-3 pb-3 border-b border-black/10 dark:border-white/10">
+          <!-- Editable Title Input -->
+          <div class="flex-1 min-w-0 flex items-center gap-2">
+            <span class="material-symbols-outlined text-lg opacity-60 flex-shrink-0">sticky_note_2</span>
+            <input type="text" id="sticky-note-pad-title" placeholder="Untitled Note" maxlength="120" class="text-base sm:text-lg font-bold bg-transparent border-none outline-none focus:ring-0 w-full placeholder:opacity-40 p-0 focus:outline-none" />
+          </div>
+
+          <!-- Action Toolbar -->
+          <div class="flex items-center gap-1.5 flex-shrink-0">
+            <!-- Quick Color Palette Dropdown / Swatches -->
+            <div class="relative group/palette">
+              <button type="button" id="sticky-note-pad-color-btn" class="p-1.5 rounded-xl hover:bg-black/10 dark:hover:bg-white/10 transition-colors opacity-80 hover:opacity-100 flex items-center justify-center" title="Change Note Color">
+                <span class="material-symbols-outlined text-lg">palette</span>
+              </button>
+              <div id="sticky-note-pad-palette-menu" class="hidden group-hover/palette:flex absolute right-0 top-full mt-1 bg-surface dark:bg-[#131B2E] p-2 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl z-50 grid grid-cols-5 gap-1.5 w-44">
+                <button type="button" data-color="butter" class="w-7 h-7 rounded-lg bg-butter-accent border-2 border-transparent hover:scale-110 transition-transform" title="Butter"></button>
+                <button type="button" data-color="peach" class="w-7 h-7 rounded-lg bg-peach-accent border-2 border-transparent hover:scale-110 transition-transform" title="Peach"></button>
+                <button type="button" data-color="mint" class="w-7 h-7 rounded-lg bg-mint-accent border-2 border-transparent hover:scale-110 transition-transform" title="Mint"></button>
+                <button type="button" data-color="sky" class="w-7 h-7 rounded-lg bg-sky-accent border-2 border-transparent hover:scale-110 transition-transform" title="Sky"></button>
+                <button type="button" data-color="lavender" class="w-7 h-7 rounded-lg bg-lavender-accent border-2 border-transparent hover:scale-110 transition-transform" title="Lavender"></button>
+                <button type="button" data-color="coral" class="w-7 h-7 rounded-lg bg-coral-accent border-2 border-transparent hover:scale-110 transition-transform" title="Coral"></button>
+                <button type="button" data-color="violet" class="w-7 h-7 rounded-lg bg-violet-accent border-2 border-transparent hover:scale-110 transition-transform" title="Violet"></button>
+                <button type="button" data-color="teal" class="w-7 h-7 rounded-lg bg-teal-accent border-2 border-transparent hover:scale-110 transition-transform" title="Teal"></button>
+                <button type="button" data-color="sage" class="w-7 h-7 rounded-lg bg-sage-accent border-2 border-transparent hover:scale-110 transition-transform" title="Sage"></button>
+                <button type="button" data-color="slate" class="w-7 h-7 rounded-lg bg-slate-accent border-2 border-transparent hover:scale-110 transition-transform" title="Slate"></button>
+              </div>
+            </div>
+
+            <!-- Star / Pin Button -->
+            <button type="button" id="sticky-note-pad-star-btn" class="p-1.5 rounded-xl hover:bg-black/10 dark:hover:bg-white/10 transition-colors opacity-80 hover:opacity-100 flex items-center justify-center text-amber-500" title="Pin note to Homescreen">
+              <span class="material-symbols-outlined text-lg" id="sticky-note-pad-star-icon">star_outline</span>
+            </button>
+
+            <!-- Delete Button -->
+            <button type="button" id="sticky-note-pad-delete-btn" class="p-1.5 rounded-xl hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 transition-colors opacity-80 hover:opacity-100 flex items-center justify-center" title="Delete note">
+              <span class="material-symbols-outlined text-lg">delete</span>
+            </button>
+
+            <!-- Close Button -->
+            <button type="button" id="sticky-note-pad-close-btn" class="p-1.5 rounded-xl hover:bg-black/10 dark:hover:bg-white/10 transition-colors opacity-80 hover:opacity-100 flex items-center justify-center ml-1" title="Close note">
+              <span class="material-symbols-outlined text-xl">close</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Note Typing Area -->
+        <div class="mt-4">
+          <textarea id="sticky-note-pad-content" rows="12" placeholder="Take a note... Type anything directly here." class="w-full bg-transparent border-none outline-none focus:ring-0 text-sm sm:text-base leading-relaxed placeholder:opacity-40 resize-none font-sans p-0 focus:outline-none min-h-[240px] sm:min-h-[300px]"></textarea>
+        </div>
+      </div>
+
+      <!-- Note Bottom Bar -->
+      <div class="mt-6 pt-3 border-t border-black/10 dark:border-white/10 flex items-center justify-between text-xs">
+        <div class="flex items-center gap-2 opacity-70 text-[11px]">
+          <span id="sticky-note-pad-date">Recently</span>
+          <span>•</span>
+          <span id="sticky-note-pad-status" class="font-medium text-emerald-600 dark:text-emerald-400">Saved</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" id="sticky-note-pad-save-btn" class="px-4 py-2 rounded-xl text-xs font-semibold bg-black/15 dark:bg-white/15 hover:bg-black/25 dark:hover:bg-white/25 border border-black/10 dark:border-white/10 shadow-sm transition-all focus:ring-2 focus:ring-black/20">
+            Done
+          </button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- 3. Profile Modal -->
   <dialog id="profile-modal" class="rounded-2xl bg-surface dark:bg-[#131B2E] p-0 shadow-xl max-w-md w-[calc(100%-2rem)] mx-auto border border-slate-200 dark:border-slate-800" aria-labelledby="profile-modal-title">
     <div class="p-6">
       <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
@@ -843,18 +909,6 @@
             <input type="checkbox" id="profile-google-photo-toggle" class="sr-only peer" />
             <div class="w-10 h-5 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
           </label>
-        </div>
-
-        <!-- User UID & Details -->
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">User ID</label>
-          <div class="flex items-center gap-2">
-            <input type="text" id="profile-uid-text" readonly class="flex-1 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-600 dark:text-slate-400 select-all" />
-            <button type="button" id="profile-copy-uid-btn" class="px-3 py-2 rounded-xl text-xs font-medium bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors flex items-center gap-1">
-              <span class="material-symbols-outlined text-sm">content_copy</span>
-              Copy
-            </button>
-          </div>
         </div>
 
         <div class="flex items-center justify-end pt-3 border-t border-slate-100 dark:border-slate-800">
