@@ -246,9 +246,17 @@ export async function renderChecklistDetail(container, uid, checklistId, setBrea
             </div>
 
             <!-- Aggregate Stats Bar -->
-            <div id="analytics-summary-stats" class="text-xs text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800 pt-3 flex items-center justify-between font-medium">
-              <span>Avg Active Rate: <strong id="stat-avg-rate" class="text-slate-800 dark:text-slate-200">0%</strong></span>
-              ${timerEnabled ? `<span>Time Logged: <strong id="stat-total-time" class="text-emerald-600 dark:text-emerald-400 font-semibold">0m</strong></span>` : ""}
+            <div id="analytics-summary-stats" class="text-xs text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800 pt-3 space-y-2 font-medium">
+              <div class="flex items-center justify-between">
+                <div>
+                  <span>Avg Active Rate: <strong id="stat-avg-rate" class="text-slate-800 dark:text-slate-200">0%</strong></span>
+                  <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 font-normal">Updates every 60 mins</p>
+                </div>
+                <div class="text-right">
+                  <span>Progress: <strong id="stat-checklist-progress" class="text-indigo-600 dark:text-indigo-400 font-semibold">0%</strong></span>
+                  ${timerEnabled ? `<span class="block text-[10px] text-emerald-600 dark:text-emerald-400 font-medium mt-0.5">Time: <strong id="stat-total-time">0m</strong></span>` : ""}
+                </div>
+              </div>
             </div>
           </section>
         ` : ""}
@@ -306,11 +314,24 @@ export async function renderChecklistDetail(container, uid, checklistId, setBrea
     }
   });
 
+  // Shared mutable tasks array, updated by real-time subscription
+  let localTasks = [];
+
   // Analytics Chart Refresh Helper
   const refreshAnalytics = () => {
     if (!graphEnabled) return;
     const canvas = container.querySelector("#checklist-analytics-canvas");
     if (!canvas) return;
+
+    // Update overall checklist progress stat
+    const progressEl = container.querySelector("#stat-checklist-progress");
+    if (progressEl && localTasks.length > 0) {
+      const completed = localTasks.filter((t) => t.isCompleted).length;
+      const pct = Math.round((completed / localTasks.length) * 100);
+      progressEl.textContent = `${pct}% (${completed}/${localTasks.length})`;
+    } else if (progressEl) {
+      progressEl.textContent = `0%`;
+    }
 
     renderAnalyticsChart(canvas, uid, checklistId, {
       days: activeDaysRange,
@@ -353,33 +374,47 @@ export async function renderChecklistDetail(container, uid, checklistId, setBrea
   }
 
   // Real-time Tasks Subscription
-  let localTasks = [];
   const unsubTasks = subscribeTasks(uid, checklistId, (tasks) => {
     localTasks = tasks;
-    renderTasksList(container, uid, checklistId, tasks, {
-      timerEnabled,
-      categoryId: checklist.categoryId,
-      onTasksChanged: () => {
-        refreshAnalytics();
-      }
-    });
-    refreshAnalytics();
-  }, (err) => {
-    console.error("[ChecklistDetail] Tasks subscription error:", err);
-    const listContainer = container.querySelector("#tasks-list-container");
-    if (listContainer) {
-      renderSectionError(listContainer, {
-        title: "Could not load tasks",
-        message: "An error occurred while syncing tasks. Please check your network connection.",
-        icon: "cloud_off",
-        retryFn: () => {
-          window.location.reload();
+    try {
+      renderTasksList(container, uid, checklistId, tasks, {
+        timerEnabled,
+        categoryId: checklist.categoryId,
+        onTasksChanged: () => {
+          refreshAnalytics();
         }
       });
+    } catch (renderErr) {
+      console.error("[ChecklistDetail] renderTasksList error:", renderErr);
+    }
+
+    try {
+      refreshAnalytics();
+    } catch (analyticsErr) {
+      console.error("[ChecklistDetail] refreshAnalytics error:", analyticsErr);
+    }
+  }, (err) => {
+    console.error("[ChecklistDetail] Tasks subscription error:", err);
+    const listEl = container.querySelector("#task-list-items");
+    if (listEl) {
+      listEl.innerHTML = `
+        <li class="py-8 text-center text-xs text-rose-500 font-medium">
+          Couldn't load tasks. Please check your internet connection.
+        </li>
+      `;
     }
   });
 
+  // Auto-refresh analytics graph every 60 minutes
+  let analyticsAutoRefreshInterval = null;
+  if (graphEnabled) {
+    analyticsAutoRefreshInterval = setInterval(() => {
+      refreshAnalytics();
+    }, 60 * 60 * 1000); // 60 minutes
+  }
+
   return () => {
+    if (analyticsAutoRefreshInterval) clearInterval(analyticsAutoRefreshInterval);
     unsubTasks();
     clearAllLiveTickers();
     destroyActiveChart();
@@ -414,10 +449,43 @@ function renderTasksList(container, uid, checklistId, tasks, options = {}) {
   // Clear running tickers before re-attaching
   clearAllLiveTickers();
 
+  const formatTaskDateTime = (val) => {
+    if (!val) return "-";
+    try {
+      let d = null;
+      if (typeof val?.toDate === "function") {
+        d = val.toDate();
+      } else if (val instanceof Date) {
+        d = val;
+      } else if (typeof val === "number") {
+        d = new Date(val);
+      } else if (typeof val === "string") {
+        d = new Date(val);
+      } else if (val && typeof val === "object" && typeof val.seconds === "number") {
+        d = new Date(val.seconds * 1000);
+      }
+      if (!d || isNaN(d.getTime())) return "-";
+
+      return d.toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+        year: "numeric"
+      }) + " at " + d.toLocaleTimeString(undefined, {
+        hour: "numeric",
+        minute: "2-digit"
+      });
+    } catch (err) {
+      return "-";
+    }
+  };
+
   listEl.innerHTML = tasks.map((task, index) => {
     const isRunning = Boolean(task.startedAt);
     const isCompleted = Boolean(task.isCompleted);
     const accumulated = task.timeSpentSeconds || 0;
+
+    const createdDateStr = formatTaskDateTime(task.createdAt);
+    const finishedDateStr = isCompleted ? formatTaskDateTime(task.completedAt) : "-";
 
     return `
       <li class="group rounded-2xl border ${
@@ -426,9 +494,9 @@ function renderTasksList(container, uid, checklistId, tasks, options = {}) {
           : isCompleted
           ? "border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40"
           : "border-slate-200 dark:border-slate-800 bg-surface dark:bg-[#131B2E] hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-subtle"
-      } p-3.5 flex items-center justify-between gap-3 transition-all duration-200" data-task-id="${task.id}" role="listitem">
+      } p-3.5 flex items-center justify-between gap-3 transition-all duration-200" data-task-id="${task.id}" role="listitem" title="Created: ${createdDateStr}&#10;Finished: ${finishedDateStr}">
         
-        <!-- Left: Checkbox + Title / Inline Edit -->
+        <!-- Left: Checkbox + Title / Inline Edit + Dates -->
         <div class="flex items-center gap-3 flex-1 min-w-0">
           <button type="button" class="task-checkbox-btn flex-shrink-0 w-5 h-5 rounded-lg border flex items-center justify-center transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
             isCompleted
@@ -444,6 +512,13 @@ function renderTasksList(container, uid, checklistId, tasks, options = {}) {
               ${escapeHtml(task.title)}
             </span>
             <input type="text" class="task-rename-input hidden w-full px-2 py-1 text-xs sm:text-sm border border-indigo-300 dark:border-indigo-600 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-indigo-400" value="${escapeHtml(task.title)}" data-id="${task.id}" maxlength="120" />
+            
+            <!-- Created & Finished Dates on Hover -->
+            <div class="text-[10px] text-slate-400 dark:text-slate-500 font-normal hidden group-hover:flex items-center gap-1.5 transition-all mt-0.5 pointer-events-none">
+              <span>Created: <strong class="font-medium text-slate-600 dark:text-slate-300">${createdDateStr}</strong></span>
+              <span>•</span>
+              <span>Finished: <strong class="font-medium ${isCompleted ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'}">${finishedDateStr}</strong></span>
+            </div>
           </div>
         </div>
 
@@ -487,19 +562,19 @@ function renderTasksList(container, uid, checklistId, tasks, options = {}) {
             ` : ""}
           `}
 
-          <!-- Reorder Handles (Up / Down) -->
-          <div class="flex items-center opacity-40 group-hover:opacity-100 transition-opacity">
-            <button type="button" class="reorder-up-btn p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-20" data-id="${task.id}" data-index="${index}" ${index === 0 ? "disabled" : ""} aria-label="Move task up: ${escapeHtml(task.title)}">
-              <span class="material-symbols-outlined text-sm">arrow_upward</span>
+          <!-- Reorder Handles (Up / Down) - Crisp, high contrast and accessible -->
+          <div class="flex items-center gap-0.5">
+            <button type="button" class="reorder-up-btn p-1 text-slate-600 hover:text-indigo-600 dark:text-slate-300 dark:hover:text-indigo-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-20 disabled:pointer-events-none" data-id="${task.id}" data-index="${index}" ${index === 0 ? "disabled" : ""} title="Move task up" aria-label="Move task up: ${escapeHtml(task.title)}">
+              <span class="material-symbols-outlined text-base font-semibold">arrow_upward</span>
             </button>
-            <button type="button" class="reorder-down-btn p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-20" data-id="${task.id}" data-index="${index}" ${index === tasks.length - 1 ? "disabled" : ""} aria-label="Move task down: ${escapeHtml(task.title)}">
-              <span class="material-symbols-outlined text-sm">arrow_downward</span>
+            <button type="button" class="reorder-down-btn p-1 text-slate-600 hover:text-indigo-600 dark:text-slate-300 dark:hover:text-indigo-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-20 disabled:pointer-events-none" data-id="${task.id}" data-index="${index}" ${index === tasks.length - 1 ? "disabled" : ""} title="Move task down" aria-label="Move task down: ${escapeHtml(task.title)}">
+              <span class="material-symbols-outlined text-base font-semibold">arrow_downward</span>
             </button>
           </div>
 
-          <!-- Delete Task Button -->
-          <button type="button" class="delete-task-btn p-1 rounded-lg text-slate-300 dark:text-slate-600 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 opacity-50 group-hover:opacity-100 transition-all" data-id="${task.id}" aria-label="Delete task: ${escapeHtml(task.title)}">
-            <span class="material-symbols-outlined text-base">delete</span>
+          <!-- Delete Task Button - High contrast, clearly clickable -->
+          <button type="button" class="delete-task-btn p-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors" data-id="${task.id}" title="Delete task" aria-label="Delete task: ${escapeHtml(task.title)}">
+            <span class="material-symbols-outlined text-lg">delete</span>
           </button>
 
         </div>

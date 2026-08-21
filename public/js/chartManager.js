@@ -51,8 +51,14 @@ export async function renderAnalyticsChart(canvas, uid, checklistId, options = {
   const timerEnabled = options.timerEnabled !== false;
   const accentColor = options.accentColor || "#818CF8";
 
-  // Destroy previous instance
+  // Destroy previous instance (also handles concurrent call race)
   destroyActiveChart();
+
+  // Also check if Chart.js has an existing chart on this canvas and destroy it
+  const existingChart = window.Chart?.getChart?.(canvas);
+  if (existingChart) {
+    try { existingChart.destroy(); } catch (_) { /* ignore */ }
+  }
 
   try {
     const data = await getTimeLogsForRange(uid, checklistId, days);
