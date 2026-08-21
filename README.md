@@ -151,32 +151,52 @@ All backend endpoints require `Authorization: Bearer <idToken>`.
 ## Repository Structure
 
 ```
+├── docs/                        # Specifications and design documentation
+│   ├── AppFlow.md               # Navigation flows and state transitions
+│   ├── Design.md                # Pastel design system, color tokens, and components
+│   ├── Implementation.md        # Technical implementation guidelines
+│   ├── PRD.md                   # Product requirements document
+│   ├── Rules.md                 # Security and behavioral guidelines
+│   ├── Schema.md                # Firestore database schema definitions
+│   ├── TechSpec.md              # Technical specifications and architectural patterns
+│   └── Tracker.md               # Development progress tracking
 ├── functions/                   # Serverless Express backend (Firebase Cloud Functions)
 │   ├── package.json             # Backend dependencies (firebase-admin, express, cors)
-│   └── index.js                 # Express API routes and token verification middleware
+│   └── index.js                 # Express REST API routes and token verification middleware
 ├── public/                      # Static decoupled frontend
-│   ├── index.html               # Semantic HTML skeleton, modals, and Tailwind config
-│   ├── 404.html                 # Custom pastel 404 error page
+│   ├── 403.html                 # Forbidden error page
+│   ├── 404.html                 # Custom pastel not found error page
+│   ├── 500.html                 # Internal server error page
+│   ├── index.html               # Semantic HTML skeleton, dialog modals, and Tailwind config
+│   ├── llms.txt                 # Machine-readable overview for LLMs
+│   ├── robots.txt               # Search crawler indexing configuration
+│   ├── sitemap.xml              # Search engine XML sitemap
 │   └── js/
-│       ├── app.js               # SPA entry point, global auth state, and hash router
 │       ├── apiClient.js         # Decoupled REST client with Bearer token injection
+│       ├── app.js               # SPA entry point, global auth state, and hash router
 │       ├── auth.js              # Firebase Auth wrapper (Email/Password and Anonymous)
-│       ├── db.js                # Firestore CRUD, batch reordering, resilient local caching
-│       ├── timer.js             # Stopwatch engine and duration formatting utilities
 │       ├── chartManager.js      # Chart.js analytics engine and data aggregation
+│       ├── db.js                # Firestore CRUD, batch reordering, resilient local caching
+│       ├── env.example.js       # Client environment configuration template
 │       ├── modals.js            # Native <dialog> modals including interactive sticky note pad
 │       ├── resetEngine.js       # Midnight reset engine trigger
+│       ├── timer.js             # Stopwatch engine and duration formatting utilities
 │       └── views/
-│           ├── home.js          # Main dashboard with active trackers and pinned notes
-│           ├── hub.js           # Activity categories hub view (#/ or #/hub)
 │           ├── categoryDetail.js# Category checklists list view (#/category/:id)
 │           ├── checklistDetail.js# Checklist tasks, stopwatch, and analytics (#/checklist/:id)
-│           ├── notes.js         # Sticky notes board with drag-and-drop (#/notes)
-│           └── errorStates.js   # Reusable section and full-page error boundaries
-├── docs/                        # Architecture specifications (PRD, TechSpec, Schema, Design)
-├── firestore.rules              # User-scoped ownership and timeLogs immutability rules
-├── firestore.indexes.json       # Composite query indexes
-└── firebase.json                # Firebase Hosting and Cloud Functions configuration
+│           ├── errorStates.js   # Reusable section and full-page error boundaries
+│           ├── home.js          # Main dashboard with active trackers and pinned notes
+│           ├── hub.js           # Activity categories hub view (#/ or #/hub)
+│           └── notes.js         # Sticky notes board with drag-and-drop (#/notes)
+├── .env.example                 # Environment variables template
+├── .firebaserc                  # Firebase project alias configuration
+├── .gitignore                   # Git exclusion rules
+├── build.js                     # Environment variable injection build script
+├── firebase.json                # Firebase Hosting and Cloud Functions configuration
+├── firestore.indexes.json       # Composite query index definitions
+├── firestore.rules              # User-scoped ownership and security rules
+├── LICENSE                      # Project license (MIT)
+└── README.md                    # Project documentation
 ```
 
 ---
