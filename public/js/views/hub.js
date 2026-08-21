@@ -170,7 +170,7 @@ export function renderHub(container, uid) {
           </div>
           <h2 class="text-base font-bold text-slate-800 dark:text-slate-100">Create your first activity</h2>
           <p class="text-xs text-slate-500 dark:text-slate-400 mt-1.5 max-w-sm mx-auto leading-relaxed">
-            Click <strong>+ New Category</strong> above to group your checklists into calming categories like Study, Health, Chores, or Deep Work.
+            Click <strong>+ New Category</strong> above to group your checklists into categories like Study, Health, Chores, or Deep Work.
           </p>
         </article>
       `;
@@ -292,9 +292,9 @@ export function renderHub(container, uid) {
     const grid = container.querySelector("#categories-grid");
     if (grid) {
       renderSectionError(grid, {
-        title: "Could not load activities",
-        message: "An error occurred while syncing your activities. Please check your connection.",
-        icon: "cloud_off",
+        title: "Couldn't load",
+        message: "Couldn't fetch activities. Please check your internet connection and try again.",
+        icon: "wifi_off",
         retryFn: () => {
           window.location.reload();
         }

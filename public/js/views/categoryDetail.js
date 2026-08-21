@@ -358,9 +358,9 @@ export async function renderCategoryDetail(container, uid, categoryId, setBreadc
     const grid = container.querySelector("#checklists-grid");
     if (grid) {
       renderSectionError(grid, {
-        title: "Could not load checklists",
-        message: "An error occurred while syncing your checklists. Please check your connection.",
-        icon: "cloud_off",
+        title: "Couldn't load",
+        message: "Couldn't fetch checklists. Please check your internet connection and try again.",
+        icon: "wifi_off",
         retryFn: () => {
           window.location.reload();
         }

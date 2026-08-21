@@ -506,7 +506,7 @@ function updateUserUI(user) {
         <!-- 1. Profile Option -->
         <button type="button" id="dropdown-profile-btn" class="w-full px-3 py-2 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5 transition-colors" role="menuitem">
           <span class="material-symbols-outlined text-base text-slate-400 dark:text-slate-500">account_circle</span>
-          <span>Profile & Account</span>
+          <span>Profile</span>
         </button>
 
         <!-- 2. Appearance Theme Toggle (Sun changing to Moon) -->
@@ -608,8 +608,6 @@ function openProfileModal(user) {
   const nameEl = document.getElementById("profile-modal-name");
   const emailEl = document.getElementById("profile-modal-email");
   const badgeEl = document.getElementById("profile-modal-provider-badge");
-  const uidText = document.getElementById("profile-uid-text");
-  const copyBtn = document.getElementById("profile-copy-uid-btn");
   const googlePhotoRow = document.getElementById("google-photo-preference-row");
   const googlePhotoToggle = document.getElementById("profile-google-photo-toggle");
   const doneBtn = document.getElementById("profile-modal-done-btn");
@@ -633,7 +631,6 @@ function openProfileModal(user) {
   if (nameEl) nameEl.textContent = displayName;
   if (emailEl) emailEl.textContent = user.email || (isGuest ? "Temporary Guest Session" : "No email linked");
   if (badgeEl) badgeEl.textContent = isGoogle ? "Google Account" : isGuest ? "Guest Account" : "Email & Password";
-  if (uidText) uidText.value = user.uid;
 
   // Show Google Photo Toggle if user has a Google photo
   if (googlePhotoRow && user.photoURL) {
@@ -652,32 +649,7 @@ function openProfileModal(user) {
     googlePhotoRow.classList.add("hidden");
   }
 
-  copyBtn.onclick = async () => {
-    try {
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(user.uid);
-      } else {
-        uidText?.select();
-        document.execCommand("copy");
-      }
-      copyBtn.innerHTML = `
-        <span class="material-symbols-outlined text-sm text-emerald-600 dark:text-emerald-400">check</span>
-        <span class="text-emerald-600 dark:text-emerald-400 font-semibold">Copied!</span>
-      `;
-      showToast("User ID copied to clipboard", "success");
-      setTimeout(() => {
-        copyBtn.innerHTML = `
-          <span class="material-symbols-outlined text-sm">content_copy</span>
-          Copy
-        `;
-      }, 2000);
-    } catch (err) {
-      console.error("[Profile] Copy failed:", err);
-      showToast("Failed to copy ID automatically. Please select and copy manually.", "error");
-    }
-  };
-
-  doneBtn.onclick = () => modal.close();
+  if (doneBtn) doneBtn.onclick = () => modal.close();
   closeBtn.onclick = () => modal.close();
 
   modal.showModal();
@@ -922,6 +894,20 @@ function bootstrap() {
       showToast("Preferences saved", "info", 2000);
     });
   }
+
+  // Network Offline / Online Indicator
+  const updateOnlineStatus = () => {
+    if (offlineBanner) {
+      if (navigator.onLine) {
+        offlineBanner.classList.add("hidden");
+      } else {
+        offlineBanner.classList.remove("hidden");
+      }
+    }
+  };
+  window.addEventListener("online", updateOnlineStatus);
+  window.addEventListener("offline", updateOnlineStatus);
+  updateOnlineStatus();
 }
 
 // Start application when DOM is ready

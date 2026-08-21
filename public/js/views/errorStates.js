@@ -36,15 +36,16 @@ function escapeHtml(str) {
  * @param {string} [options.retryLabel="Try Again"] - Retry button text
  */
 export function renderSectionError(container, options = {}) {
+  const isOffline = !navigator.onLine;
   const {
-    title = "Failed to load",
-    message = "Something went wrong loading this section. This may be a temporary issue.",
-    icon = "error",
+    title = isOffline ? "Couldn't load" : "Couldn't load",
+    message = isOffline ? "No internet connection. Please check your network and try again." : "Something went wrong loading this section. This may be a temporary issue.",
+    icon = isOffline ? "wifi_off" : "cloud_off",
     retryFn = null,
     retryLabel = "Try Again"
   } = options;
 
-  const retryId = `retry-btn-${Date.now()}`;
+  const retryId = `retry-btn-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 
   container.innerHTML = `
     <div class="flex flex-col items-center justify-center py-10 px-6 text-center bg-surface dark:bg-[#131B2E] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm" role="alert">

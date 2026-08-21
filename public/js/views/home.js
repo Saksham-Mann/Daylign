@@ -27,6 +27,7 @@ import {
 import {
   openCategoryModal,
   openNoteModal,
+  openStickyNotePad,
   showConfirmModal
 } from "../modals.js";
 import { renderSectionError } from "./errorStates.js";
@@ -212,7 +213,7 @@ export function renderHome(container, uid) {
           </div>
 
           <div class="px-3.5 py-2 rounded-2xl bg-surface dark:bg-[#131B2E] border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-2">
-            <span class="material-symbols-outlined text-amber-500 text-base">star</span>
+            <span class="material-symbols-outlined material-symbols-filled text-amber-500 text-base" style="font-variation-settings: 'FILL' 1;">star</span>
             <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">
               <strong id="home-stat-notes" class="text-amber-600 dark:text-amber-400">0</strong> Pinned Notes
             </span>
@@ -248,7 +249,7 @@ export function renderHome(container, uid) {
       <div class="space-y-3.5">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
-            <span class="material-symbols-outlined text-amber-500 text-xl">star</span>
+            <span class="material-symbols-outlined material-symbols-filled text-amber-500 text-xl" style="font-variation-settings: 'FILL' 1;">star</span>
             <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight">Important Notes</h2>
           </div>
           <a href="#/notes" class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
@@ -264,23 +265,17 @@ export function renderHome(container, uid) {
         </div>
       </div>
 
-      <!-- 4. Active Categories Section -->
+      <!-- 4. Active Activities Section -->
       <div class="space-y-3.5">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
             <span class="material-symbols-outlined text-indigo-500 text-xl">category</span>
             <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight">Active Activities</h2>
           </div>
-          <div class="flex items-center gap-3">
-            <a href="#/activities" class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
-              All activities
-              <span class="material-symbols-outlined text-sm">arrow_forward</span>
-            </a>
-            <button type="button" id="home-new-category-btn" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-900 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white text-xs font-semibold shadow-sm transition-all">
-              <span class="material-symbols-outlined text-sm">add</span>
-              New Category
-            </button>
-          </div>
+          <a href="#/activities" class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
+            All activities
+            <span class="material-symbols-outlined text-sm">arrow_forward</span>
+          </a>
         </div>
 
         <div id="home-categories-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
@@ -291,9 +286,6 @@ export function renderHome(container, uid) {
       </div>
     </section>
   `;
-
-  // Bind New Category Button
-  container.querySelector("#home-new-category-btn")?.addEventListener("click", () => openCategoryModal(uid));
 
   let categories = [];
   let checklists = [];
@@ -321,19 +313,14 @@ export function renderHome(container, uid) {
 
     if (runningTasks.length === 0) {
       el.innerHTML = `
-        <div class="col-span-full p-5 rounded-2xl bg-surface dark:bg-[#131B2E] border border-slate-200/80 dark:border-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-between gap-4">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center">
-              <span class="material-symbols-outlined text-xl">timer_off</span>
-            </div>
-            <div>
-              <p class="text-xs font-semibold text-slate-700 dark:text-slate-300">No timers currently running</p>
-              <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">Start a stopwatch on any task in your checklists to track live focus sessions here.</p>
-            </div>
+        <div class="col-span-full p-5 rounded-2xl bg-surface dark:bg-[#131B2E] border border-slate-200/80 dark:border-slate-800 text-slate-500 dark:text-slate-400 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-xl">timer_off</span>
           </div>
-          <a href="#/activities" class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex-shrink-0">
-            Open Checklists &rarr;
-          </a>
+          <div>
+            <p class="text-xs font-semibold text-slate-700 dark:text-slate-300">No timers currently running</p>
+            <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">Start a stopwatch on any task in your checklists to track live focus sessions here.</p>
+          </div>
         </div>
       `;
       return;
@@ -467,19 +454,14 @@ export function renderHome(container, uid) {
 
     if (importantNotes.length === 0) {
       el.innerHTML = `
-        <div class="col-span-full p-5 rounded-2xl bg-surface dark:bg-[#131B2E] border border-slate-200/80 dark:border-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-between gap-4">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-500 flex items-center justify-center">
-              <span class="material-symbols-outlined text-xl">star</span>
-            </div>
-            <div>
-              <p class="text-xs font-semibold text-slate-700 dark:text-slate-300">No notes marked as important yet</p>
-              <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">Click the star ⭐ icon on any note in the Notes page to pin it to your Homescreen.</p>
-            </div>
+        <div class="col-span-full p-5 rounded-2xl bg-surface dark:bg-[#131B2E] border border-slate-200/80 dark:border-slate-800 text-slate-500 dark:text-slate-400 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-xl">star</span>
           </div>
-          <a href="#/notes" class="text-xs font-semibold text-amber-600 dark:text-amber-400 hover:underline flex-shrink-0">
-            Go to Notes &rarr;
-          </a>
+          <div>
+            <p class="text-xs font-semibold text-slate-700 dark:text-slate-300">No notes marked as important yet</p>
+            <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">Click the star icon on any note in the Notes page to pin it to your Homescreen.</p>
+          </div>
         </div>
       `;
       return;
@@ -489,25 +471,25 @@ export function renderHome(container, uid) {
       const theme = NOTE_THEMES[note.colorToken || "butter"] || NOTE_THEMES.butter;
 
       return `
-        <article class="group relative rounded-2xl p-4 border ${theme.bg} ${theme.border} shadow-sm hover:shadow-md transition-all flex flex-col justify-between" data-note-id="${note.id}" role="listitem">
+        <article class="home-note-card group relative rounded-2xl p-4 border ${theme.bg} ${theme.border} shadow-sm hover:shadow-md transition-all flex flex-col justify-between cursor-pointer select-none hover:-translate-y-0.5" data-note-id="${note.id}" role="listitem" tabindex="0" title="Click to open and edit note">
           <!-- Card Top Bar -->
           <div class="flex items-start justify-between gap-2 mb-2">
             <button type="button" class="home-unpin-note-btn p-1 -ml-1 text-amber-500 hover:text-slate-400 transition-colors" data-id="${note.id}" title="Unpin from Homescreen">
-              <span class="material-symbols-outlined text-lg fill-current">star</span>
+              <span class="material-symbols-outlined material-symbols-filled text-lg text-amber-500" style="font-variation-settings: 'FILL' 1;">star</span>
             </button>
-            <button type="button" class="home-edit-note-btn p-1 rounded-lg opacity-60 hover:opacity-100 ${theme.text} transition-all" data-id="${note.id}" title="Edit note">
+            <button type="button" class="home-edit-note-btn p-1 rounded-lg opacity-60 hover:opacity-100 ${theme.text} transition-all" data-id="${note.id}" title="Open sticky note pad">
               <span class="material-symbols-outlined text-sm">edit</span>
             </button>
           </div>
 
           <!-- Note Body -->
-          <div class="space-y-1 flex-1">
+          <div class="space-y-1 flex-1 pointer-events-none">
             ${note.title ? `<h3 class="text-xs font-bold ${theme.text} leading-snug tracking-tight">${escapeHtml(note.title)}</h3>` : ""}
-            ${note.content ? `<p class="text-xs ${theme.text} line-clamp-4 whitespace-pre-wrap ${note.title ? 'mt-1' : ''}">${escapeHtml(note.content)}</p>` : ""}
+            ${note.content ? `<p class="text-xs ${theme.text} line-clamp-4 whitespace-pre-wrap ${note.title ? 'mt-1' : ''}">${escapeHtml(note.content)}</p>` : `<p class="text-xs ${theme.muted} italic leading-relaxed mt-1">Empty note — click to type...</p>`}
           </div>
 
           <!-- Note Footer Pin Label -->
-          <div class="mt-3 pt-2 border-t border-black/5 dark:border-white/10 flex items-center justify-between text-[10px] ${theme.muted}">
+          <div class="mt-3 pt-2 border-t border-black/5 dark:border-white/10 flex items-center justify-between text-[10px] ${theme.muted} pointer-events-none">
             <span>Pinned Note</span>
             <span class="material-symbols-outlined text-xs text-amber-600">push_pin</span>
           </div>
@@ -515,9 +497,27 @@ export function renderHome(container, uid) {
       `;
     }).join("");
 
-    // Wire unpin
+    // Wire Card Click -> Open Sticky Note Pad
+    el.querySelectorAll(".home-note-card").forEach((card) => {
+      card.addEventListener("click", () => {
+        const noteId = card.getAttribute("data-note-id");
+        const note = importantNotes.find((n) => n.id === noteId);
+        if (note) openStickyNotePad(uid, note);
+      });
+      card.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          const noteId = card.getAttribute("data-note-id");
+          const note = importantNotes.find((n) => n.id === noteId);
+          if (note) openStickyNotePad(uid, note);
+        }
+      });
+    });
+
+    // Wire unpin (stopPropagation)
     el.querySelectorAll(".home-unpin-note-btn").forEach((btn) => {
-      btn.addEventListener("click", async () => {
+      btn.addEventListener("click", async (e) => {
+        e.stopPropagation();
         const noteId = btn.getAttribute("data-id");
         try {
           await toggleNoteImportant(uid, noteId, false);
@@ -532,12 +532,13 @@ export function renderHome(container, uid) {
       });
     });
 
-    // Wire edit
+    // Wire edit (stopPropagation)
     el.querySelectorAll(".home-edit-note-btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
         const noteId = btn.getAttribute("data-id");
         const note = importantNotes.find((n) => n.id === noteId);
-        if (note) openNoteModal(uid, note);
+        if (note) openStickyNotePad(uid, note);
       });
     });
   };
@@ -557,12 +558,14 @@ export function renderHome(container, uid) {
 
     if (categories.length === 0) {
       el.innerHTML = `
-        <div class="col-span-full py-12 px-6 text-center bg-surface dark:bg-[#131B2E] rounded-3xl border border-slate-200 dark:border-slate-800 border-dashed shadow-sm">
-          <div class="w-12 h-12 rounded-2xl bg-lavender-bg dark:bg-indigo-950/60 text-lavender-accent flex items-center justify-center mx-auto mb-3 shadow-sm">
-            <span class="material-symbols-outlined text-2xl text-indigo-500">category</span>
+        <div class="col-span-full p-5 rounded-2xl bg-surface dark:bg-[#131B2E] border border-slate-200/80 dark:border-slate-800 text-slate-500 dark:text-slate-400 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-xl">category</span>
           </div>
-          <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100">No activities created yet</h3>
-          <p class="text-xs text-slate-400 mt-1">Click <strong>+ New Category</strong> above to start organizing your routines.</p>
+          <div>
+            <p class="text-xs font-semibold text-slate-700 dark:text-slate-300">No activities created yet</p>
+            <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">Create your first category in Activities to start organizing your routines.</p>
+          </div>
         </div>
       `;
       return;
@@ -622,9 +625,9 @@ export function renderHome(container, uid) {
     const el = container.querySelector("#home-categories-grid");
     if (el) {
       renderSectionError(el, {
-        title: "Could not load activities",
-        message: "An error occurred while loading activities.",
-        icon: "cloud_off"
+        title: "Couldn't load",
+        message: "An error occurred while loading activities. Please check your connection.",
+        icon: "wifi_off"
       });
     }
   });
@@ -644,9 +647,9 @@ export function renderHome(container, uid) {
     const el = container.querySelector("#home-notes-grid");
     if (el) {
       renderSectionError(el, {
-        title: "Could not load pinned notes",
-        message: "An error occurred while syncing your notes.",
-        icon: "sticky_note_2"
+        title: "Couldn't load",
+        message: "An error occurred while syncing your notes. Please check your connection.",
+        icon: "wifi_off"
       });
     }
   });
