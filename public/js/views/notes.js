@@ -1,16 +1,17 @@
 /**
  * @file views/notes.js
  * @description Sticky Notes Board View for Daylign.
- * Allows users to create, view, edit, search, and pin/star important notes
- * with pastel themes and real-time Firestore persistence.
+ * Allows users to create, view, edit, drag-and-drop reorder, and pin/star important notes
+ * with pastel themes, priority sorting (important first), and real-time Firestore persistence.
  */
 
 import {
   subscribeNotes,
   deleteNote,
-  toggleNoteImportant
+  toggleNoteImportant,
+  reorderNotes
 } from "../db.js";
-import { openNoteModal, showConfirmModal } from "../modals.js";
+import { openNoteModal, openStickyNotePad, showConfirmModal } from "../modals.js";
 import { renderSectionError } from "./errorStates.js";
 
 // Pastel color palette configuration for sticky notes
@@ -131,7 +132,7 @@ function formatNoteDate(timestamp) {
  */
 export function renderNotes(container, uid) {
   container.innerHTML = `
-    <section aria-labelledby="notes-heading" class="space-y-6">
+    <section aria-labelledby="notes-heading" class="space-y-8">
       <!-- Notes Top Bar -->
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -139,8 +140,8 @@ export function renderNotes(container, uid) {
             <span class="material-symbols-outlined text-amber-500 text-3xl">sticky_note_2</span>
             Sticky Notes
           </h1>
-          <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Capture quick thoughts, reminders, and ideas. Starred notes appear directly on your Homescreen.
+          <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1.5">
+            Capture quick thoughts, reminders, and ideas. Drag any note to reorder it freely. Click to type directly.
           </p>
         </div>
         <button type="button" id="new-note-btn" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white text-xs sm:text-sm font-semibold shadow-sm transition-all focus:ring-2 focus:ring-offset-2 focus:ring-slate-800">
@@ -149,28 +150,8 @@ export function renderNotes(container, uid) {
         </button>
       </div>
 
-      <!-- Search & Filter Controls -->
-      <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-surface dark:bg-[#131B2E] p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-        <!-- Search Input -->
-        <div class="relative flex-1">
-          <span class="material-symbols-outlined text-slate-400 text-lg absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">search</span>
-          <input type="text" id="notes-search-input" placeholder="Search your notes..." class="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs sm:text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all" />
-        </div>
-
-        <!-- Filter Segmented Tabs -->
-        <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl flex-shrink-0">
-          <button type="button" id="filter-all-notes" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 shadow-sm transition-all">
-            All (<span id="count-all-notes">0</span>)
-          </button>
-          <button type="button" id="filter-important-notes" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all flex items-center gap-1">
-            <span class="material-symbols-outlined text-amber-500 text-sm">star</span>
-            Important (<span id="count-important-notes">0</span>)
-          </button>
-        </div>
-      </div>
-
-      <!-- Notes Grid -->
-      <div id="notes-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5" role="list">
+      <!-- Notes Grid (Drag and Drop Board) -->
+      <div id="notes-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 pt-2" role="list">
         <div class="col-span-full py-16 text-center">
           <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-slate-200 dark:border-slate-800 border-t-amber-400"></div>
           <p class="text-xs text-slate-400 dark:text-slate-500 mt-3 font-medium">Loading sticky notes...</p>
@@ -184,95 +165,59 @@ export function renderNotes(container, uid) {
   newNoteBtn?.addEventListener("click", () => openNoteModal(uid));
 
   let rawNotes = [];
-  let currentFilter = "all"; // "all" | "important"
-  let searchQuery = "";
-
-  const searchInput = container.querySelector("#notes-search-input");
-  const filterAllBtn = container.querySelector("#filter-all-notes");
-  const filterImportantBtn = container.querySelector("#filter-important-notes");
-
-  searchInput?.addEventListener("input", (e) => {
-    searchQuery = (e.target.value || "").trim().toLowerCase();
-    renderGrid();
-  });
-
-  filterAllBtn?.addEventListener("click", () => {
-    currentFilter = "all";
-    filterAllBtn.className = "px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 shadow-sm transition-all";
-    filterImportantBtn.className = "px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all flex items-center gap-1";
-    renderGrid();
-  });
-
-  filterImportantBtn?.addEventListener("click", () => {
-    currentFilter = "important";
-    filterImportantBtn.className = "px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 shadow-sm transition-all flex items-center gap-1";
-    filterAllBtn.className = "px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all";
-    renderGrid();
-  });
+  let draggedNoteId = null;
+  let isDragging = false;
 
   const renderGrid = () => {
     const grid = container.querySelector("#notes-grid");
-    const countAllEl = container.querySelector("#count-all-notes");
-    const countImpEl = container.querySelector("#count-important-notes");
-
     if (!grid) return;
 
-    const importantNotes = rawNotes.filter((n) => n.isImportant);
-    if (countAllEl) countAllEl.textContent = String(rawNotes.length);
-    if (countImpEl) countImpEl.textContent = String(importantNotes.length);
-
-    let filtered = rawNotes;
-    if (currentFilter === "important") {
-      filtered = importantNotes;
-    }
-    if (searchQuery) {
-      filtered = filtered.filter((n) =>
-        (n.title && n.title.toLowerCase().includes(searchQuery)) ||
-        (n.content && n.content.toLowerCase().includes(searchQuery))
-      );
-    }
-
+    // Explicit empty state when no notes have been created yet
     if (rawNotes.length === 0) {
       grid.innerHTML = `
         <article class="col-span-full py-16 px-6 text-center bg-surface dark:bg-[#131B2E] rounded-3xl border border-slate-200 dark:border-slate-800 border-dashed shadow-sm">
           <div class="w-14 h-14 rounded-2xl bg-amber-50 dark:bg-amber-950/60 text-amber-500 flex items-center justify-center mx-auto mb-4 shadow-sm">
             <span class="material-symbols-outlined text-3xl">sticky_note_2</span>
           </div>
-          <h2 class="text-base font-bold text-slate-800 dark:text-slate-100">No sticky notes yet</h2>
+          <h2 class="text-base font-bold text-slate-800 dark:text-slate-100">No notes created yet</h2>
           <p class="text-xs text-slate-500 dark:text-slate-400 mt-1.5 max-w-sm mx-auto leading-relaxed">
-            Click <strong>+ New Note</strong> above to jot down thoughts, ideas, or reminders.
+            Click <strong>+ New Note</strong> above to organize your thoughts, ideas, or reminders into quick notes.
           </p>
         </article>
       `;
       return;
     }
 
-    if (filtered.length === 0) {
-      grid.innerHTML = `
-        <div class="col-span-full py-12 text-center text-slate-400 dark:text-slate-500">
-          <span class="material-symbols-outlined text-3xl mb-2 text-slate-300 dark:text-slate-600">search_off</span>
-          <p class="text-xs font-medium">No notes match your filter or search query.</p>
-        </div>
-      `;
-      return;
-    }
-
-    grid.innerHTML = filtered.map((note) => {
+    grid.innerHTML = rawNotes.map((note) => {
       const theme = NOTE_THEMES[note.colorToken || "butter"] || NOTE_THEMES.butter;
       const isImportant = Boolean(note.isImportant);
 
       return `
-        <article class="group relative rounded-2xl p-5 border ${theme.bg} ${theme.border} shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between" data-note-id="${note.id}" role="listitem">
-          <!-- Card Header & Star Pin -->
+        <article class="note-card group relative rounded-2xl p-5 border ${theme.bg} ${theme.border} shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between cursor-grab active:cursor-grabbing select-none hover:-translate-y-0.5" 
+                 data-note-id="${note.id}" 
+                 draggable="true" 
+                 role="listitem" 
+                 tabindex="0" 
+                 title="Drag to reorder • Click to open and type in note">
+          
+          <!-- Card Header: Drag Handle, Star Pin & Actions -->
           <div class="flex items-start justify-between gap-2 mb-2.5">
-            <button type="button" class="star-note-btn p-1 -ml-1 rounded-lg text-slate-400 hover:text-amber-500 transition-colors" data-id="${note.id}" data-important="${isImportant}" title="${isImportant ? 'Pinned to Homescreen (Click to unpin)' : 'Mark as Important & Pin to Homescreen'}">
-              <span class="material-symbols-outlined text-xl ${isImportant ? 'text-amber-500 fill-current' : 'text-slate-400/80 hover:text-amber-500'}">
-                ${isImportant ? 'star' : 'star_outline'}
-              </span>
-            </button>
+            <div class="flex items-center gap-1">
+              <!-- Drag Affordance Handle -->
+              <div class="drag-handle text-slate-400/70 hover:text-slate-700 dark:hover:text-slate-200 cursor-grab p-1 -ml-1 transition-colors" title="Grab to reorder note">
+                <span class="material-symbols-outlined text-lg pointer-events-none">drag_indicator</span>
+              </div>
+
+              <!-- Star / Important Pin Button -->
+              <button type="button" class="star-note-btn p-1 rounded-lg text-slate-400 hover:text-amber-500 transition-colors focus:outline-none" data-id="${note.id}" data-important="${isImportant}" title="${isImportant ? 'Pinned in front & on Homescreen (Click to unpin)' : 'Mark as Important (Moves note to front)'}">
+                <span class="material-symbols-outlined text-xl ${isImportant ? 'material-symbols-filled text-amber-500' : 'text-slate-400/80 hover:text-amber-500'}" style="${isImportant ? 'font-variation-settings: \'FILL\' 1;' : ''}">
+                  ${isImportant ? 'star' : 'star_outline'}
+                </span>
+              </button>
+            </div>
 
             <div class="flex items-center gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
-              <button type="button" class="edit-note-btn p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 ${theme.text} transition-colors" data-id="${note.id}" title="Edit note">
+              <button type="button" class="edit-note-btn p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 ${theme.text} transition-colors" data-id="${note.id}" title="Open note editor">
                 <span class="material-symbols-outlined text-base">edit</span>
               </button>
               <button type="button" class="delete-note-btn p-1 rounded-lg hover:bg-rose-500/10 text-rose-600 dark:text-rose-400 transition-colors" data-id="${note.id}" title="Delete note">
@@ -282,21 +227,116 @@ export function renderNotes(container, uid) {
           </div>
 
           <!-- Note Content -->
-          <div class="space-y-1.5 flex-1">
+          <div class="space-y-1.5 flex-1 pointer-events-none">
             ${note.title ? `<h3 class="text-sm font-bold ${theme.text} leading-snug tracking-tight">${escapeHtml(note.title)}</h3>` : ""}
-            ${note.content ? `<p class="text-xs ${theme.text} leading-relaxed whitespace-pre-wrap break-words ${note.title ? 'mt-1' : ''}">${escapeHtml(note.content)}</p>` : ""}
+            ${note.content ? `<p class="text-xs ${theme.text} leading-relaxed whitespace-pre-wrap break-words line-clamp-6 ${note.title ? 'mt-1' : ''}">${escapeHtml(note.content)}</p>` : `<p class="text-xs ${theme.muted} italic leading-relaxed mt-1">Empty note — click to type...</p>`}
           </div>
 
-          <!-- Note Footer Timestamp -->
-          <div class="mt-4 pt-2.5 border-t border-black/5 dark:border-white/10 flex items-center justify-between text-[11px] ${theme.muted}">
-            <span>${formatNoteDate(note.createdAt)}</span>
+          <!-- Note Footer Timestamp & Pinned Indicator -->
+          <div class="mt-4 pt-2.5 border-t border-black/5 dark:border-white/10 flex items-center justify-between text-[11px] ${theme.muted} pointer-events-none">
+            <span>${formatNoteDate(note.createdAt || note.updatedAt)}</span>
             ${isImportant ? `<span class="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 dark:text-amber-300"><span class="material-symbols-outlined text-xs">push_pin</span> Pinned</span>` : ""}
           </div>
         </article>
       `;
     }).join("");
 
-    // Wire Star / Important toggles
+    // Setup Drag & Drop Listeners on all Note Cards
+    const cards = grid.querySelectorAll(".note-card");
+    cards.forEach((card) => {
+      const noteId = card.getAttribute("data-note-id");
+
+      // Drag Start
+      card.addEventListener("dragstart", (e) => {
+        draggedNoteId = noteId;
+        isDragging = true;
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", noteId);
+        setTimeout(() => {
+          card.classList.add("opacity-40", "scale-95", "ring-2", "ring-indigo-500", "shadow-2xl", "rotate-1");
+        }, 0);
+      });
+
+      // Drag End
+      card.addEventListener("dragend", () => {
+        draggedNoteId = null;
+        setTimeout(() => { isDragging = false; }, 50);
+        cards.forEach((c) => {
+          c.classList.remove(
+            "opacity-40", "scale-95", "ring-2", "ring-indigo-500", "ring-offset-2",
+            "shadow-2xl", "rotate-1", "bg-indigo-50/40", "dark:bg-indigo-950/40", "scale-[1.02]"
+          );
+        });
+      });
+
+      // Drag Over
+      card.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        if (draggedNoteId && draggedNoteId !== noteId) {
+          card.classList.add("ring-2", "ring-indigo-500", "ring-offset-2", "scale-[1.02]", "bg-indigo-50/40", "dark:bg-indigo-950/40");
+        }
+      });
+
+      // Drag Leave
+      card.addEventListener("dragleave", () => {
+        card.classList.remove("ring-2", "ring-indigo-500", "ring-offset-2", "scale-[1.02]", "bg-indigo-50/40", "dark:bg-indigo-950/40");
+      });
+
+      // Drop Action
+      card.addEventListener("drop", async (e) => {
+        e.preventDefault();
+        card.classList.remove("ring-2", "ring-indigo-500", "ring-offset-2", "scale-[1.02]", "bg-indigo-50/40", "dark:bg-indigo-950/40");
+
+        if (!draggedNoteId || draggedNoteId === noteId) return;
+
+        const fromIndex = rawNotes.findIndex((n) => n.id === draggedNoteId);
+        const toIndex = rawNotes.findIndex((n) => n.id === noteId);
+
+        if (fromIndex === -1 || toIndex === -1) return;
+
+        // Perform reorder in local array
+        const [movedNote] = rawNotes.splice(fromIndex, 1);
+        rawNotes.splice(toIndex, 0, movedNote);
+
+        // Reassign sequential order indices
+        const reorderPayload = rawNotes.map((n, idx) => {
+          n.order = idx;
+          return { id: n.id, order: idx, isImportant: n.isImportant };
+        });
+
+        // Re-render UI immediately for instantaneous zero-latency response
+        renderGrid();
+
+        // Persist new ordering to Firestore and Local Store
+        try {
+          await reorderNotes(uid, reorderPayload);
+        } catch (err) {
+          console.warn("[Notes:reorder] Error persisting reorder:", err);
+        }
+      });
+
+      // Wire Card Click -> Open Sticky Note Pad for direct typing (ignoring clicks while dragging)
+      card.addEventListener("click", (e) => {
+        if (isDragging) return;
+        const note = rawNotes.find((n) => n.id === noteId);
+        if (note) {
+          openStickyNotePad(uid, note);
+        }
+      });
+
+      card.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          const note = rawNotes.find((n) => n.id === noteId);
+          if (note) {
+            openStickyNotePad(uid, note);
+          }
+        }
+      });
+    });
+
+    // Wire Star / Important toggles (stopPropagation to prevent opening modal)
     grid.querySelectorAll(".star-note-btn").forEach((btn) => {
       btn.addEventListener("click", async (e) => {
         e.stopPropagation();
@@ -305,7 +345,7 @@ export function renderNotes(container, uid) {
         try {
           await toggleNoteImportant(uid, noteId, !currentImp);
           if (typeof window.showToast === "function") {
-            window.showToast(!currentImp ? "Note pinned to Homescreen ⭐" : "Note unpinned from Homescreen", "success");
+            window.showToast(!currentImp ? "Note moved to front & pinned to Homescreen ⭐" : "Note unpinned from Homescreen", "success");
           }
         } catch (err) {
           if (typeof window.showToast === "function") {
@@ -315,19 +355,19 @@ export function renderNotes(container, uid) {
       });
     });
 
-    // Wire Edit buttons
+    // Wire Edit buttons (stopPropagation)
     grid.querySelectorAll(".edit-note-btn").forEach((btn) => {
       btn.addEventListener("click", (e) => {
         e.stopPropagation();
         const noteId = btn.getAttribute("data-id");
         const note = rawNotes.find((n) => n.id === noteId);
         if (note) {
-          openNoteModal(uid, note);
+          openStickyNotePad(uid, note);
         }
       });
     });
 
-    // Wire Delete buttons
+    // Wire Delete buttons (stopPropagation)
     grid.querySelectorAll(".delete-note-btn").forEach((btn) => {
       btn.addEventListener("click", async (e) => {
         e.stopPropagation();
@@ -374,9 +414,9 @@ export function renderNotes(container, uid) {
       const grid = container.querySelector("#notes-grid");
       if (grid) {
         renderSectionError(grid, {
-          title: "Could not load sticky notes",
-          message: "An error occurred while syncing notes from the cloud. You can still create and manage local notes.",
-          icon: "cloud_off",
+          title: "Couldn't load",
+          message: "Couldn't fetch your sticky notes. Please check your internet connection and try again.",
+          icon: "wifi_off",
           retryFn: () => {
             initSubscription();
           }
@@ -387,13 +427,20 @@ export function renderNotes(container, uid) {
 
   initSubscription();
 
+  const handleOnline = () => {
+    initSubscription();
+  };
+  window.addEventListener("online", handleOnline);
+
   return () => {
     if (typeof unsubscribeNotesFn === "function") {
       unsubscribeNotesFn();
     }
+    window.removeEventListener("online", handleOnline);
   };
 }
 
 export default {
   renderNotes
 };
+

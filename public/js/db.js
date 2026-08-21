@@ -351,9 +351,10 @@ export async function deleteChecklist(uid, checklistId) {
 
 export function subscribeTasks(uid, checklistId, callback, onError) {
   if (!uid || !checklistId) return () => {};
-  const q = query(getTasksCol(uid, checklistId), orderBy("order", "asc"));
+  const q = query(getTasksCol(uid, checklistId));
   return onSnapshot(q, (snapshot) => {
     const tasks = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+    tasks.sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0));
     if (typeof callback === "function") callback(tasks);
   }, (err) => {
     console.warn("[DB:subscribeTasks] Error:", err.message);
@@ -363,9 +364,11 @@ export function subscribeTasks(uid, checklistId, callback, onError) {
 
 export async function getTasks(uid, checklistId) {
   if (!uid || !checklistId) return [];
-  const q = query(getTasksCol(uid, checklistId), orderBy("order", "asc"));
+  const q = query(getTasksCol(uid, checklistId));
   const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  const tasks = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  tasks.sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0));
+  return tasks;
 }
 
 export async function createTask(uid, checklistId, data) {
@@ -376,8 +379,12 @@ export async function createTask(uid, checklistId, data) {
   const tasksCol = getTasksCol(uid, checklistId);
   let order = data.order;
   if (order === undefined || order === null) {
-    const snap = await getDocs(tasksCol);
-    order = snap.size;
+    try {
+      const snap = await getDocs(tasksCol);
+      order = snap.size;
+    } catch (err) {
+      order = Date.now();
+    }
   }
 
   const taskData = {
@@ -386,17 +393,21 @@ export async function createTask(uid, checklistId, data) {
     startedAt: null,
     timeSpentSeconds: 0,
     completedAt: null,
-    order: Number(order),
+    order: Number(order) || 0,
     createdAt: serverTimestamp()
   };
 
   const docRef = await addDoc(tasksCol, taskData);
 
-  const checkRef = doc(db, "users", uid, "checklists", checklistId);
-  await updateDoc(checkRef, {
-    taskCount: increment(1),
-    updatedAt: serverTimestamp()
-  });
+  try {
+    const checkRef = doc(db, "users", uid, "checklists", checklistId);
+    await updateDoc(checkRef, {
+      taskCount: increment(1),
+      updatedAt: serverTimestamp()
+    });
+  } catch (err) {
+    console.warn("[createTask] Could not update checklist taskCount:", err.message);
+  }
 
   return { id: docRef.id, ...taskData };
 }
@@ -577,21 +588,23 @@ export async function getTimeLogsForRange(uid, checklistId, days = 7) {
   }
 
   const startDateStr = dateList[0].dateStr;
-  let q = query(getTimeLogsCol(uid), where("date", ">=", startDateStr));
-  if (checklistId) {
-    q = query(getTimeLogsCol(uid), where("checklistId", "==", checklistId), where("date", ">=", startDateStr));
+  const q = query(getTimeLogsCol(uid), where("date", ">=", startDateStr));
+
+  try {
+    const snap = await getDocs(q);
+
+    snap.forEach((doc) => {
+      const log = doc.data();
+      if (checklistId && log.checklistId !== checklistId) return;
+      if (dateBucketMap.has(log.date)) {
+        const bucket = dateBucketMap.get(log.date);
+        if (log.completed) bucket.completedCount += 1;
+        if (log.durationSeconds) bucket.durationSeconds += log.durationSeconds;
+      }
+    });
+  } catch (err) {
+    console.warn("[getTimeLogsForRange] Failed to fetch timeLogs:", err.message);
   }
-
-  const snap = await getDocs(q);
-
-  snap.forEach((doc) => {
-    const log = doc.data();
-    if (dateBucketMap.has(log.date)) {
-      const bucket = dateBucketMap.get(log.date);
-      if (log.completed) bucket.completedCount += 1;
-      if (log.durationSeconds) bucket.durationSeconds += log.durationSeconds;
-    }
-  });
 
   let totalActiveDays = 0;
   let totalCompletions = 0;
@@ -745,6 +758,38 @@ function saveLocalNotes(uid, notes) {
 }
 
 /**
+ * Canonical sorting function for sticky notes:
+ * 1. Important / pinned notes (isImportant: true) ALWAYS appear in front of normal notes.
+ * 2. Within each group (important vs normal), sort by explicit `order` index (ascending).
+ * 3. Fall back to newest creation or update timestamp (descending).
+ */
+export function sortNotes(notes) {
+  if (!Array.isArray(notes)) return [];
+  return [...notes].sort((a, b) => {
+    // 1. Important notes first
+    const impA = a.isImportant ? 1 : 0;
+    const impB = b.isImportant ? 1 : 0;
+    if (impA !== impB) {
+      return impB - impA;
+    }
+
+    // 2. Explicit manual order (if set)
+    const orderA = typeof a.order === "number" ? a.order : null;
+    const orderB = typeof b.order === "number" ? b.order : null;
+    if (orderA !== null && orderB !== null && orderA !== orderB) {
+      return orderA - orderB;
+    }
+    if (orderA !== null && orderB === null) return -1;
+    if (orderA === null && orderB !== null) return 1;
+
+    // 3. Fallback: newest first
+    const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt ? new Date(a.createdAt).getTime() : (a.updatedAt?.toMillis ? a.updatedAt.toMillis() : (a.updatedAt ? new Date(a.updatedAt).getTime() : 0)));
+    const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt ? new Date(b.createdAt).getTime() : (b.updatedAt?.toMillis ? b.updatedAt.toMillis() : (b.updatedAt ? new Date(b.updatedAt).getTime() : 0)));
+    return timeB - timeA;
+  });
+}
+
+/**
  * Subscribe to real-time updates of user sticky notes.
  * 
  * @param {string} uid - User ID
@@ -755,12 +800,7 @@ export function subscribeNotes(uid, callback, onError) {
   if (!uid) return () => {};
 
   const handleLocalChange = () => {
-    const localNotes = getLocalNotes(uid);
-    localNotes.sort((a, b) => {
-      const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
-      const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
-      return timeB - timeA;
-    });
+    const localNotes = sortNotes(getLocalNotes(uid));
     if (typeof callback === "function") callback(localNotes);
   };
 
@@ -775,12 +815,8 @@ export function subscribeNotes(uid, callback, onError) {
   try {
     const q = getNotesCol(uid);
     unsubscribeFirestore = onSnapshot(q, (snapshot) => {
-      const notes = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
-      notes.sort((a, b) => {
-        const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt ? new Date(a.createdAt).getTime() : (a.updatedAt?.toMillis ? a.updatedAt.toMillis() : 0));
-        const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt ? new Date(b.createdAt).getTime() : (b.updatedAt?.toMillis ? b.updatedAt.toMillis() : 0));
-        return timeB - timeA;
-      });
+      const rawNotes = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+      const notes = sortNotes(rawNotes);
       // Update local cache
       try {
         localStorage.setItem(getLocalNotesKey(uid), JSON.stringify(notes));
@@ -789,14 +825,18 @@ export function subscribeNotes(uid, callback, onError) {
     }, (err) => {
       console.warn("[DB:subscribeNotes] Firestore sync warning (" + err.message + "), using local notes.");
       handleLocalChange();
-      // Only invoke onError if we don't even have local notes
-      if (typeof onError === "function" && getLocalNotes(uid).length === 0) {
+      // Only invoke onError if we don't have local notes and we are offline or have network failure
+      const localNotes = getLocalNotes(uid);
+      if (typeof onError === "function" && localNotes.length === 0 && (!navigator.onLine || err.code === "unavailable" || err.message?.includes("offline") || err.message?.includes("network"))) {
         onError(err);
       }
     });
   } catch (err) {
     console.warn("[DB:subscribeNotes] Init error:", err);
     handleLocalChange();
+    if (typeof onError === "function" && getLocalNotes(uid).length === 0 && !navigator.onLine) {
+      onError(err);
+    }
   }
 
   return () => {
@@ -814,27 +854,29 @@ export async function getNotes(uid) {
     const q = getNotesCol(uid);
     const snap = await getDocs(q);
     const notes = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-    notes.sort((a, b) => {
-      const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
-      const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
-      return timeB - timeA;
-    });
-    return notes;
+    return sortNotes(notes);
   } catch (err) {
     console.warn("[DB:getNotes] Firestore fetch failed, returning local notes:", err.message);
-    return getLocalNotes(uid);
+    return sortNotes(getLocalNotes(uid));
   }
 }
 
 /**
  * Create a new sticky note
  */
-export async function createNote(uid, data) {
+export async function createNote(uid, data = {}) {
   if (!uid) throw new Error("User ID is required.");
-  const title = (data.title || "").trim();
+  const title = (data.title || "").trim() || "Untitled Note";
   const content = (data.content || "").trim();
-  if (!title && !content) {
-    throw new Error("Please enter a note title or content.");
+  const isImportant = Boolean(data.isImportant);
+
+  const current = getLocalNotes(uid);
+  let order = data.order;
+  if (order === undefined || order === null) {
+    // Calculate new order to appear at the front of its group
+    const sameGroupNotes = current.filter((n) => Boolean(n.isImportant) === isImportant);
+    const existingOrders = sameGroupNotes.map((n) => typeof n.order === "number" ? n.order : 0);
+    order = existingOrders.length > 0 ? Math.min(...existingOrders) - 1 : 0;
   }
 
   const nowIso = new Date().toISOString();
@@ -842,7 +884,8 @@ export async function createNote(uid, data) {
     title,
     content,
     colorToken: data.colorToken || "butter",
-    isImportant: Boolean(data.isImportant),
+    isImportant,
+    order: Number(order) || 0,
     createdAt: nowIso,
     updatedAt: nowIso
   };
@@ -854,17 +897,15 @@ export async function createNote(uid, data) {
       updatedAt: serverTimestamp()
     });
     const result = { id: docRef.id, ...noteData };
-    const current = getLocalNotes(uid);
     current.unshift(result);
-    saveLocalNotes(uid, current);
+    saveLocalNotes(uid, sortNotes(current));
     return result;
   } catch (err) {
     console.warn("[DB:createNote] Firestore write failed (" + err.message + "), saved to local resilient store.");
     const localId = `note_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     const result = { id: localId, ...noteData };
-    const current = getLocalNotes(uid);
     current.unshift(result);
-    saveLocalNotes(uid, current);
+    saveLocalNotes(uid, sortNotes(current));
     return result;
   }
 }
@@ -884,7 +925,7 @@ export async function updateNote(uid, noteId, updates) {
   const idx = current.findIndex((n) => n.id === noteId);
   if (idx !== -1) {
     current[idx] = { ...current[idx], ...payload };
-    saveLocalNotes(uid, current);
+    saveLocalNotes(uid, sortNotes(current));
   }
 
   try {
@@ -898,6 +939,49 @@ export async function updateNote(uid, noteId, updates) {
   }
 
   return { id: noteId, ...payload };
+}
+
+/**
+ * Reorder sticky notes and persist new sequence indices
+ * 
+ * @param {string} uid - User ID
+ * @param {Array<{ id: string, order: number, isImportant?: boolean }>} items
+ */
+export async function reorderNotes(uid, items) {
+  if (!uid || !Array.isArray(items) || items.length === 0) return;
+
+  // 1. Immediately update local store for instantaneous UI response
+  const current = getLocalNotes(uid);
+  const noteMap = new Map(current.map((n) => [n.id, n]));
+
+  items.forEach((item) => {
+    if (noteMap.has(item.id)) {
+      const n = noteMap.get(item.id);
+      if (typeof item.order === "number") n.order = item.order;
+      if (typeof item.isImportant === "boolean") n.isImportant = item.isImportant;
+      n.updatedAt = new Date().toISOString();
+    }
+  });
+
+  saveLocalNotes(uid, sortNotes(current));
+
+  // 2. Commit batch to Firestore
+  try {
+    const batch = writeBatch(db);
+    items.forEach((item) => {
+      if (item.id) {
+        const ref = doc(db, "users", uid, "notes", item.id);
+        const payload = {};
+        if (typeof item.order === "number") payload.order = item.order;
+        if (typeof item.isImportant === "boolean") payload.isImportant = item.isImportant;
+        payload.updatedAt = serverTimestamp();
+        batch.update(ref, payload);
+      }
+    });
+    await batch.commit();
+  } catch (err) {
+    console.warn("[DB:reorderNotes] Firestore reorder sync warning, persisted locally:", err.message);
+  }
 }
 
 /**
@@ -1040,9 +1124,11 @@ export default {
   runDailyResetCheck,
   getNotes,
   subscribeNotes,
+  sortNotes,
   createNote,
   updateNote,
   deleteNote,
+  reorderNotes,
   toggleNoteImportant,
   subscribeRunningTasks
 };
