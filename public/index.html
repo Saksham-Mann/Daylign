@@ -400,7 +400,7 @@
   </header>
 
   <!-- Main SPA Content Container -->
-  <main id="app-root" class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8" role="main">
+  <main id="app-root" class="flex-1 max-w-6xl w-full mx-auto px-3.5 sm:px-6 py-5 sm:py-8 pb-24 sm:pb-8" role="main">
     <!-- Initial Loading State -->
     <div class="flex flex-col items-center justify-center py-20 gap-4 text-center">
       <div class="w-12 h-12 rounded-2xl bg-lavender-bg dark:bg-indigo-950/60 text-lavender-accent flex items-center justify-center animate-spin">
@@ -1009,8 +1009,24 @@
     </div>
   </dialog>
 
+  <!-- Mobile Bottom Navigation Bar (Visible exclusively on mobile screens < sm) -->
+  <nav id="mobile-bottom-nav" class="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface/95 dark:bg-[#131B2E]/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 px-3 py-1.5 flex items-center justify-around shadow-lg transition-transform duration-200" aria-label="Mobile Bottom Navigation">
+    <a href="#/" id="mobile-bottom-home" class="flex flex-col items-center justify-center gap-1 py-1.5 px-4 rounded-2xl text-slate-500 dark:text-slate-400 text-[11px] font-semibold transition-colors focus:outline-none">
+      <span class="material-symbols-outlined text-xl">home</span>
+      <span>Home</span>
+    </a>
+    <a href="#/activities" id="mobile-bottom-activities" class="flex flex-col items-center justify-center gap-1 py-1.5 px-4 rounded-2xl text-slate-500 dark:text-slate-400 text-[11px] font-semibold transition-colors focus:outline-none">
+      <span class="material-symbols-outlined text-xl">category</span>
+      <span>Activities</span>
+    </a>
+    <a href="#/notes" id="mobile-bottom-notes" class="flex flex-col items-center justify-center gap-1 py-1.5 px-4 rounded-2xl text-slate-500 dark:text-slate-400 text-[11px] font-semibold transition-colors focus:outline-none">
+      <span class="material-symbols-outlined text-xl">sticky_note_2</span>
+      <span>Notes</span>
+    </a>
+  </nav>
+
   <!-- Scroll-to-Top Floating Button -->
-  <button id="scroll-to-top-btn" class="fixed bottom-5 left-5 z-40 p-3 rounded-full bg-surface dark:bg-[#131B2E] border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 shadow-lg hover:shadow-xl transition-all opacity-0 pointer-events-none translate-y-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-lavender" aria-label="Scroll back to top">
+  <button id="scroll-to-top-btn" class="fixed bottom-20 sm:bottom-5 left-5 z-40 p-3 rounded-full bg-surface dark:bg-[#131B2E] border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 shadow-lg hover:shadow-xl transition-all opacity-0 pointer-events-none translate-y-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-lavender" aria-label="Scroll back to top">
     <span class="material-symbols-outlined text-xl">arrow_upward</span>
   </button>
 

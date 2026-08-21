@@ -478,7 +478,7 @@ function updateUserUI(user) {
     </button>
 
     <!-- Floating Dropdown Menu -->
-    <div id="user-dropdown-menu" class="dropdown-menu hidden absolute right-0 top-12 z-50 w-64 rounded-2xl bg-surface dark:bg-[#131B2E] border border-slate-200 dark:border-slate-800 shadow-dropdown p-2" role="menu" aria-orientation="vertical">
+    <div id="user-dropdown-menu" class="dropdown-menu hidden absolute right-0 top-12 z-50 w-64 max-w-[calc(100vw-1.5rem)] rounded-2xl bg-surface dark:bg-[#131B2E] border border-slate-200 dark:border-slate-800 shadow-dropdown p-2" role="menu" aria-orientation="vertical">
       
       <!-- User Info Header -->
       <div class="px-3 py-2.5 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3">
@@ -664,16 +664,27 @@ function updateNavHighlight(hash) {
   const activitiesLink = document.getElementById("nav-link-activities");
   const notesLink = document.getElementById("nav-link-notes");
 
-  const activeClass = "nav-item px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm flex items-center gap-1.5 transition-all";
-  const inactiveClass = "nav-item px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-1.5 transition-all";
+  const mobileHome = document.getElementById("mobile-bottom-home");
+  const mobileActivities = document.getElementById("mobile-bottom-activities");
+  const mobileNotes = document.getElementById("mobile-bottom-notes");
 
   const isHome = hash === "#/" || hash === "#/home" || hash === "" || hash === "#";
   const isActivities = hash.startsWith("#/activities") || hash.startsWith("#/hub") || hash.startsWith("#/category") || hash.startsWith("#/checklist");
   const isNotes = hash.startsWith("#/notes");
 
+  const activeClass = "nav-item px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm flex items-center gap-1.5 transition-all";
+  const inactiveClass = "nav-item px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-1.5 transition-all";
+
   if (homeLink) homeLink.className = isHome ? activeClass : inactiveClass;
   if (activitiesLink) activitiesLink.className = isActivities ? activeClass : inactiveClass;
   if (notesLink) notesLink.className = isNotes ? activeClass : inactiveClass;
+
+  const mobileActiveClass = "flex flex-col items-center justify-center gap-1 py-1.5 px-4 rounded-2xl text-indigo-600 dark:text-indigo-400 font-bold text-[11px] bg-indigo-50/80 dark:bg-indigo-950/60 transition-all";
+  const mobileInactiveClass = "flex flex-col items-center justify-center gap-1 py-1.5 px-4 rounded-2xl text-slate-500 dark:text-slate-400 font-semibold text-[11px] hover:text-slate-800 dark:hover:text-white transition-colors";
+
+  if (mobileHome) mobileHome.className = isHome ? mobileActiveClass : mobileInactiveClass;
+  if (mobileActivities) mobileActivities.className = isActivities ? mobileActiveClass : mobileInactiveClass;
+  if (mobileNotes) mobileNotes.className = isNotes ? mobileActiveClass : mobileInactiveClass;
 }
 
 /* ==========================================================================
@@ -686,10 +697,14 @@ async function router() {
 
   const user = getCurrentUser();
   const headerNav = document.getElementById("header-nav");
+  const mobileBottomNav = document.getElementById("mobile-bottom-nav");
+  const mobileMenuBtn = document.getElementById("mobile-menu-btn");
 
   // Route Guard: Unauthenticated users redirected to #/login
   if (!user && hash !== "#/login") {
     if (headerNav) headerNav.classList.add("hidden");
+    if (mobileBottomNav) mobileBottomNav.classList.add("hidden");
+    if (mobileMenuBtn) mobileMenuBtn.classList.add("hidden");
     window.location.hash = "#/login";
     return;
   }
@@ -703,12 +718,23 @@ async function router() {
   // 1. Auth View
   if (hash === "#/login") {
     if (headerNav) headerNav.classList.add("hidden");
+    if (mobileBottomNav) mobileBottomNav.classList.add("hidden");
+    if (mobileMenuBtn) mobileMenuBtn.classList.add("hidden");
     renderAuthView();
     return;
   }
 
   if (headerNav) {
     headerNav.classList.remove("hidden");
+    if (!headerNav.classList.contains("sm:flex")) {
+      headerNav.classList.add("sm:flex");
+    }
+  }
+  if (mobileBottomNav) {
+    mobileBottomNav.classList.remove("hidden");
+  }
+  if (mobileMenuBtn) {
+    mobileMenuBtn.classList.remove("hidden");
   }
   updateNavHighlight(hash);
 
