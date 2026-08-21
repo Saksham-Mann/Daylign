@@ -702,9 +702,8 @@ async function router() {
 
   // Route Guard: Unauthenticated users redirected to #/login
   if (!user && hash !== "#/login") {
-    if (headerNav) headerNav.classList.add("hidden");
-    if (mobileBottomNav) mobileBottomNav.classList.add("hidden");
-    if (mobileMenuBtn) mobileMenuBtn.classList.add("hidden");
+    if (headerNav) headerNav.classList.add("!hidden");
+    if (mobileBottomNav) mobileBottomNav.classList.add("!hidden");
     window.location.hash = "#/login";
     return;
   }
@@ -717,24 +716,17 @@ async function router() {
 
   // 1. Auth View
   if (hash === "#/login") {
-    if (headerNav) headerNav.classList.add("hidden");
-    if (mobileBottomNav) mobileBottomNav.classList.add("hidden");
-    if (mobileMenuBtn) mobileMenuBtn.classList.add("hidden");
+    if (headerNav) headerNav.classList.add("!hidden");
+    if (mobileBottomNav) mobileBottomNav.classList.add("!hidden");
     renderAuthView();
     return;
   }
 
   if (headerNav) {
-    headerNav.classList.remove("hidden");
-    if (!headerNav.classList.contains("sm:flex")) {
-      headerNav.classList.add("sm:flex");
-    }
+    headerNav.classList.remove("!hidden");
   }
   if (mobileBottomNav) {
-    mobileBottomNav.classList.remove("hidden");
-  }
-  if (mobileMenuBtn) {
-    mobileMenuBtn.classList.remove("hidden");
+    mobileBottomNav.classList.remove("!hidden");
   }
   updateNavHighlight(hash);
 
