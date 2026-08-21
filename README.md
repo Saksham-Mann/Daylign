@@ -209,6 +209,10 @@ FIREBASE_MEASUREMENT_ID=G-SEMDSMVSVV
 ```
 
 ### 4. Run Locally
+Generate the local environment configuration:
+```bash
+node build.js
+```
 Serve the static frontend locally:
 ```bash
 npx -y serve public -l 5000
@@ -224,7 +228,27 @@ firebase emulators:start
 
 ## Deployment
 
-Deploy Cloud Functions, Firestore security rules, indexes, and static Hosting to Firebase:
+### Deploying to Cloudflare Pages
+
+1. **Connect Repository**: Link your GitHub repository in the Cloudflare Pages dashboard.
+2. **Build Settings**:
+   - **Build command**: `node build.js`
+   - **Build output directory**: `public`
+3. **Environment Variables**: Add your Firebase configuration variables under **Settings > Environment variables**:
+   - `FIREBASE_API_KEY`
+   - `FIREBASE_AUTH_DOMAIN`
+   - `FIREBASE_PROJECT_ID`
+   - `FIREBASE_STORAGE_BUCKET`
+   - `FIREBASE_MESSAGING_SENDER_ID`
+   - `FIREBASE_APP_ID`
+   - `FIREBASE_MEASUREMENT_ID`
+4. **Authorize Domain in Firebase**:
+   - Open **Firebase Console > Authentication > Settings > Authorized domains**.
+   - Add your Cloudflare domain (e.g. `your-app.pages.dev` or custom domain).
+
+### Deploying to Firebase
+
+Deploy Cloud Functions, Firestore security rules, indexes, and static Hosting directly to Firebase:
 ```bash
 firebase deploy
 ```
