@@ -696,38 +696,29 @@ async function router() {
   viewState.currentRoute = hash;
 
   const user = getCurrentUser();
-  const headerNav = document.getElementById("header-nav");
-  const mobileBottomNav = document.getElementById("mobile-bottom-nav");
-  const mobileMenuBtn = document.getElementById("mobile-menu-btn");
 
   // Route Guard: Unauthenticated users redirected to #/login
   if (!user && hash !== "#/login") {
-    if (headerNav) headerNav.classList.add("!hidden");
-    if (mobileBottomNav) mobileBottomNav.classList.add("!hidden");
+    document.body.classList.add("unauthenticated");
     window.location.hash = "#/login";
     return;
   }
 
   // Redirect authenticated user away from #/login
   if (user && hash === "#/login") {
+    document.body.classList.remove("unauthenticated");
     window.location.hash = "#/";
     return;
   }
 
   // 1. Auth View
   if (hash === "#/login") {
-    if (headerNav) headerNav.classList.add("!hidden");
-    if (mobileBottomNav) mobileBottomNav.classList.add("!hidden");
+    document.body.classList.add("unauthenticated");
     renderAuthView();
     return;
   }
 
-  if (headerNav) {
-    headerNav.classList.remove("!hidden");
-  }
-  if (mobileBottomNav) {
-    mobileBottomNav.classList.remove("!hidden");
-  }
+  document.body.classList.remove("unauthenticated");
   updateNavHighlight(hash);
 
   // 2. Homescreen Dashboard View (#/ or #/home)
