@@ -19,14 +19,8 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 const app = express();
 
-// Apply Global Middleware — restrict CORS to known origins (HIGH-03)
-const ALLOWED_ORIGINS = [
-  "https://daylign-22030.web.app",
-  "https://daylign-22030.firebaseapp.com",
-  "http://localhost:5000",
-  "http://localhost:4000"
-];
-app.use(cors({ origin: ALLOWED_ORIGINS }));
+// Apply Global Middleware — allow CORS across Firebase Hosting, Cloudflare Pages, and local environments
+app.use(cors({ origin: true }));
 app.use(express.json());
 
 // Rate limiting: max 100 read requests per minute per IP (MEDIUM-03)
@@ -1015,4 +1009,4 @@ app.post("/api/engine/reset", mutationLimiter, async (req, res) => {
 });
 
 // Export Cloud Function "api"
-exports.api = onRequest({ cors: ALLOWED_ORIGINS, maxInstances: 10 }, app);
+exports.api = onRequest({ cors: true, maxInstances: 10 }, app);
