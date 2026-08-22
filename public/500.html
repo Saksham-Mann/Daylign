@@ -6,27 +6,33 @@
   <meta name="description" content="500 — Server Error | Daylign" />
   <title>500 — Server Error | Daylign</title>
 
-  <!-- Favicon -->
-  <link id="app-favicon" rel="icon" type="image/png" href="./assets/logo-light.png" />
+  <!-- High-Resolution Browser-Theme-Adaptive Favicons -->
+  <link rel="icon" type="image/png" sizes="32x32" href="./assets/light/favicon-32x32.png" media="(prefers-color-scheme: light)" />
+  <link rel="icon" type="image/png" sizes="16x16" href="./assets/light/favicon-16x16.png" media="(prefers-color-scheme: light)" />
+  <link rel="icon" type="image/png" sizes="32x32" href="./assets/dark/favicon-32x32.png" media="(prefers-color-scheme: dark)" />
+  <link rel="icon" type="image/png" sizes="16x16" href="./assets/dark/favicon-16x16.png" media="(prefers-color-scheme: dark)" />
+  <link rel="apple-touch-icon" sizes="180x180" href="./assets/light/apple-touch-icon.png" />
+  <link id="app-favicon" rel="icon" type="image/png" sizes="32x32" href="./assets/light/favicon-32x32.png" />
 
   <!-- Google Font: Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
 
-  <!-- Immediate dark mode & favicon sync -->
+  <!-- Immediate dark mode & browser-favicon sync -->
   <script>
     (function() {
       const savedTheme = localStorage.getItem('daylign-theme');
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      const isDark = savedTheme === 'dark' || (!savedTheme && prefersDark);
-      if (isDark) {
+      if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
         document.documentElement.classList.add('dark');
       }
-      const favicon = document.getElementById('app-favicon');
-      if (favicon) {
-        favicon.href = isDark ? './assets/logo-dark.png' : './assets/logo-light.png';
+      function updateFavicon() {
+        const browserDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const favicon = document.getElementById('app-favicon');
+        if (favicon) favicon.href = browserDark ? './assets/dark/favicon-32x32.png' : './assets/light/favicon-32x32.png';
       }
+      updateFavicon();
     })();
   </script>
 

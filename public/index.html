@@ -19,8 +19,13 @@
   <meta name="twitter:title" content="Daylign" />
   <meta name="twitter:description" content="A serene, lightweight personal learning, habit, and activity tracker with configurable reset cadences, timers, and analytics." />
 
-  <!-- Dynamic Favicon (Switches dynamically between light/dark themes) -->
-  <link id="app-favicon" rel="icon" type="image/png" href="./assets/logo-light.png" />
+  <!-- High-Resolution Browser-Theme-Adaptive Favicons (Crisp 32x32 / 16x16 / Apple Touch Icons) -->
+  <link rel="icon" type="image/png" sizes="32x32" href="./assets/light/favicon-32x32.png" media="(prefers-color-scheme: light)" />
+  <link rel="icon" type="image/png" sizes="16x16" href="./assets/light/favicon-16x16.png" media="(prefers-color-scheme: light)" />
+  <link rel="icon" type="image/png" sizes="32x32" href="./assets/dark/favicon-32x32.png" media="(prefers-color-scheme: dark)" />
+  <link rel="icon" type="image/png" sizes="16x16" href="./assets/dark/favicon-16x16.png" media="(prefers-color-scheme: dark)" />
+  <link rel="apple-touch-icon" sizes="180x180" href="./assets/light/apple-touch-icon.png" />
+  <link id="app-favicon" rel="icon" type="image/png" sizes="32x32" href="./assets/light/favicon-32x32.png" />
 
   <!-- Google Font: Inter & Google Material Symbols Outlined -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -28,9 +33,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
 
-  <!-- Immediate Theme & Favicon Initializer (Prevents theme flash and syncs favicon) -->
+  <!-- Immediate Theme & Browser-Favicon Initializer -->
   <script>
     (function() {
+      // 1. In-App Website Theme Setup
       const savedTheme = localStorage.getItem('daylign-theme');
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       const isDark = savedTheme === 'dark' || (!savedTheme && prefersDark);
@@ -39,9 +45,21 @@
       } else {
         document.documentElement.classList.remove('dark');
       }
-      const favicon = document.getElementById('app-favicon');
-      if (favicon) {
-        favicon.href = isDark ? './assets/logo-dark.png' : './assets/logo-light.png';
+
+      // 2. Browser Tab Favicon Setup (Strictly based on browser/OS theme, NOT website theme)
+      function updateBrowserFavicon(e) {
+        const browserDark = (e && typeof e.matches === 'boolean') ? e.matches : window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const favicon = document.getElementById('app-favicon');
+        if (favicon) {
+          favicon.href = browserDark ? './assets/dark/favicon-32x32.png' : './assets/light/favicon-32x32.png';
+        }
+      }
+      updateBrowserFavicon();
+      const themeMedia = window.matchMedia('(prefers-color-scheme: dark)');
+      if (themeMedia.addEventListener) {
+        themeMedia.addEventListener('change', updateBrowserFavicon);
+      } else if (themeMedia.addListener) {
+        themeMedia.addListener(updateBrowserFavicon);
       }
     })();
   </script>
@@ -418,11 +436,9 @@
 
   <!-- Custom Loading Screen Overlay (Waits for fonts, auth & initial view readiness) -->
   <div id="app-loading-screen" aria-label="Loading Daylign" role="status">
-    <div class="flex flex-col items-center gap-5 select-none">
-      <div class="w-16 h-16 rounded-2xl bg-surface dark:bg-[#131B2E] border border-slate-200/80 dark:border-slate-800 shadow-md p-3 flex items-center justify-center transition-transform">
-        <img src="./assets/logo-light.png" alt="Daylign Logo" class="w-full h-full object-contain dark:hidden" />
-        <img src="./assets/logo-dark.png" alt="Daylign Logo" class="w-full h-full object-contain hidden dark:block" />
-      </div>
+    <div class="flex flex-col items-center gap-4 select-none">
+      <img src="./assets/dark/android-chrome-192x192.png" alt="Daylign Logo" class="w-14 h-14 object-contain dark:hidden" />
+      <img src="./assets/light/android-chrome-192x192.png" alt="Daylign Logo" class="w-14 h-14 object-contain hidden dark:block" />
       <div class="flex items-center gap-2">
         <span class="loading-dot"></span>
         <span class="loading-dot"></span>
@@ -454,15 +470,11 @@
   <header class="sticky top-0 z-30 bg-surface/90 dark:bg-[#131B2E]/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
       
-      <!-- Brand Logo -->
-      <a href="#/" class="flex items-center gap-2.5 group cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-lavender rounded-xl p-1" aria-label="Daylign Home">
-        <div class="w-9 h-9 rounded-xl bg-surface dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 flex items-center justify-center shadow-sm transition-transform group-hover:scale-105 p-1.5 overflow-hidden">
-          <img src="./assets/logo-light.png" alt="Daylign" class="w-full h-full object-contain dark:hidden" />
-          <img src="./assets/logo-dark.png" alt="Daylign" class="w-full h-full object-contain hidden dark:block" />
-        </div>
-        <div class="flex flex-col">
-          <span class="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight">Daylign</span>
-        </div>
+      <!-- Brand Logo (Direct inline icon without surrounding box) -->
+      <a href="#/" class="flex items-center gap-2 group cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-lavender rounded-xl py-1 px-1.5" aria-label="Daylign Home">
+        <img src="./assets/dark/android-chrome-192x192.png" alt="Daylign" class="w-7 h-7 object-contain dark:hidden transition-transform group-hover:scale-105" />
+        <img src="./assets/light/android-chrome-192x192.png" alt="Daylign" class="w-7 h-7 object-contain hidden dark:block transition-transform group-hover:scale-105" />
+        <span class="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight">Daylign</span>
       </a>
 
       <!-- Header Center: Navigation Links (Visible on tablets and desktop >= 768px) -->

@@ -79,12 +79,6 @@ export function setTheme(theme) {
   }
   localStorage.setItem("daylign-theme", theme);
 
-  // Synchronize Favicon with active theme
-  const favicon = document.getElementById("app-favicon");
-  if (favicon) {
-    favicon.href = isDark ? "./assets/logo-dark.png" : "./assets/logo-light.png";
-  }
-
   // Update theme switch UI elements if mounted
   updateThemeSwitchUI(isDark);
 }
@@ -233,9 +227,9 @@ function renderAuthView() {
   appRoot.innerHTML = `
     <section class="max-w-md mx-auto py-10 px-6 sm:px-8 bg-surface dark:bg-[#131B2E] rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm" aria-labelledby="auth-heading">
       <div class="text-center mb-8">
-        <div class="w-14 h-14 rounded-2xl bg-surface dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 flex items-center justify-center mx-auto mb-3 shadow-sm p-2.5 overflow-hidden">
-          <img src="./assets/logo-light.png" alt="Daylign" class="w-full h-full object-contain dark:hidden" />
-          <img src="./assets/logo-dark.png" alt="Daylign" class="w-full h-full object-contain hidden dark:block" />
+        <div class="flex items-center justify-center mx-auto mb-3">
+          <img src="./assets/dark/android-chrome-192x192.png" alt="Daylign" class="w-12 h-12 object-contain dark:hidden" />
+          <img src="./assets/light/android-chrome-192x192.png" alt="Daylign" class="w-12 h-12 object-contain hidden dark:block" />
         </div>
         <h1 id="auth-heading" class="text-2xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">Welcome to Daylign</h1>
         <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Calm, unified habit & activity alignment</p>
