@@ -4,23 +4,23 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="Daylign — A serene, lightweight personal learning, habit, and activity tracker with configurable reset cadences, timers, and analytics." />
-  <title>Daylign — Personal Learning, Habit & Activity Tracker</title>
+  <title>Daylign</title>
   <link rel="canonical" href="https://daylign-22030.web.app/" />
 
   <!-- Open Graph / Social Media -->
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://daylign-22030.web.app/" />
-  <meta property="og:title" content="Daylign — Personal Learning, Habit & Activity Tracker" />
+  <meta property="og:title" content="Daylign" />
   <meta property="og:description" content="A serene, lightweight personal learning, habit, and activity tracker with configurable reset cadences, timers, and analytics." />
   <meta property="og:site_name" content="Daylign" />
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="Daylign — Personal Learning, Habit & Activity Tracker" />
+  <meta name="twitter:title" content="Daylign" />
   <meta name="twitter:description" content="A serene, lightweight personal learning, habit, and activity tracker with configurable reset cadences, timers, and analytics." />
 
-  <!-- Favicon (Inline SVG for zero external asset dependency) -->
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23E0E7FF'/%3E%3Cpath d='M10 16l4 4 8-8' stroke='%23818CF8' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E" />
+  <!-- Dynamic Favicon (Switches dynamically between light/dark themes) -->
+  <link id="app-favicon" rel="icon" type="image/png" href="./assets/logo-light.png" />
 
   <!-- Google Font: Inter & Google Material Symbols Outlined -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -28,15 +28,20 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
 
-  <!-- Immediate Theme Initializer (Prevents theme flash) -->
+  <!-- Immediate Theme & Favicon Initializer (Prevents theme flash and syncs favicon) -->
   <script>
     (function() {
       const savedTheme = localStorage.getItem('daylign-theme');
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+      const isDark = savedTheme === 'dark' || (!savedTheme && prefersDark);
+      if (isDark) {
         document.documentElement.classList.add('dark');
       } else {
         document.documentElement.classList.remove('dark');
+      }
+      const favicon = document.getElementById('app-favicon');
+      if (favicon) {
+        favicon.href = isDark ? './assets/logo-dark.png' : './assets/logo-light.png';
       }
     })();
   </script>
@@ -344,6 +349,55 @@
     body.unauthenticated #mobile-bottom-nav {
       display: none !important;
     }
+
+    /* Custom Theme-Aligned Loading Screen & Animated Dots */
+    #app-loading-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background-color: var(--color-canvas);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.35s ease;
+    }
+    #app-loading-screen.fade-out {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    @keyframes dot-pulse-loop {
+      0%, 80%, 100% {
+        transform: scale(0.6);
+        opacity: 0.3;
+      }
+      40% {
+        transform: scale(1.15);
+        opacity: 1;
+      }
+    }
+
+    .loading-dot {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 9999px;
+      animation: dot-pulse-loop 1.2s infinite ease-in-out both;
+    }
+    .loading-dot:nth-child(1) {
+      background-color: #818CF8; /* Lavender */
+      animation-delay: -0.32s;
+    }
+    .loading-dot:nth-child(2) {
+      background-color: #A855F7; /* Violet */
+      animation-delay: -0.16s;
+    }
+    .loading-dot:nth-child(3) {
+      background-color: #6366F1; /* Indigo */
+      animation-delay: 0s;
+    }
   </style>
 
   <!-- Chart.js CDN -->
@@ -361,6 +415,21 @@
   </script>
 </head>
 <body class="min-h-full flex flex-col selection:bg-lavender-bg selection:text-slate-900">
+
+  <!-- Custom Loading Screen Overlay (Waits for fonts, auth & initial view readiness) -->
+  <div id="app-loading-screen" aria-label="Loading Daylign" role="status">
+    <div class="flex flex-col items-center gap-5 select-none">
+      <div class="w-16 h-16 rounded-2xl bg-surface dark:bg-[#131B2E] border border-slate-200/80 dark:border-slate-800 shadow-md p-3 flex items-center justify-center transition-transform">
+        <img src="./assets/logo-light.png" alt="Daylign Logo" class="w-full h-full object-contain dark:hidden" />
+        <img src="./assets/logo-dark.png" alt="Daylign Logo" class="w-full h-full object-contain hidden dark:block" />
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="loading-dot"></span>
+        <span class="loading-dot"></span>
+        <span class="loading-dot"></span>
+      </div>
+    </div>
+  </div>
 
   <!-- Accessibility: Skip to Main Content Link -->
   <a href="#app-root" class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:px-4 focus:py-2.5 focus:bg-slate-900 focus:text-white focus:rounded-xl focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-lavender font-semibold text-xs transition-all">Skip to main content</a>
@@ -387,8 +456,9 @@
       
       <!-- Brand Logo -->
       <a href="#/" class="flex items-center gap-2.5 group cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-lavender rounded-xl p-1" aria-label="Daylign Home">
-        <div class="w-9 h-9 rounded-xl bg-lavender-bg dark:bg-indigo-950/60 flex items-center justify-center text-lavender-accent shadow-sm transition-transform group-hover:scale-105">
-          <span class="material-symbols-outlined text-xl text-indigo-500 dark:text-indigo-400">task_alt</span>
+        <div class="w-9 h-9 rounded-xl bg-surface dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 flex items-center justify-center shadow-sm transition-transform group-hover:scale-105 p-1.5 overflow-hidden">
+          <img src="./assets/logo-light.png" alt="Daylign" class="w-full h-full object-contain dark:hidden" />
+          <img src="./assets/logo-dark.png" alt="Daylign" class="w-full h-full object-contain hidden dark:block" />
         </div>
         <div class="flex flex-col">
           <span class="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight">Daylign</span>
