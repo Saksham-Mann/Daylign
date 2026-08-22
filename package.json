@@ -1,0 +1,12 @@
+{
+  "name": "daylign",
+  "version": "1.0.0",
+  "description": "Daylign — Personal Learning, Habit & Activity Tracker",
+  "scripts": {
+    "build": "node build.js",
+    "start": "node build.js && npx serve public -l 5000"
+  },
+  "keywords": ["habits", "tracker", "spa", "productivity"],
+  "author": "Saksham Mann",
+  "license": "MIT"
+}

@@ -830,31 +830,6 @@ function bootstrap() {
     }
   });
 
-  // Mobile Navigation Drawer Coordinator
-  const mobileMenuBtn = document.getElementById("mobile-menu-btn");
-  const mobileDrawer = document.getElementById("mobile-nav-drawer");
-  const mobileCloseBtn = document.getElementById("mobile-nav-close-btn");
-
-  if (mobileMenuBtn && mobileDrawer) {
-    mobileMenuBtn.addEventListener("click", () => {
-      mobileDrawer.showModal();
-      mobileMenuBtn.setAttribute("aria-expanded", "true");
-    });
-
-    mobileCloseBtn?.addEventListener("click", () => {
-      mobileDrawer.close();
-      mobileMenuBtn.setAttribute("aria-expanded", "false");
-    });
-
-    // Close drawer when any mobile nav link is clicked
-    mobileDrawer.querySelectorAll("a").forEach((link) => {
-      link.addEventListener("click", () => {
-        mobileDrawer.close();
-        mobileMenuBtn.setAttribute("aria-expanded", "false");
-      });
-    });
-  }
-
   // Scroll Progress Indicator & Scroll-to-Top Button
   const progressBar = document.getElementById("scroll-progress-bar");
   const scrollToTopBtn = document.getElementById("scroll-to-top-btn");

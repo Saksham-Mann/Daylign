@@ -919,7 +919,6 @@ export function initModalBackdrops() {
   wireClose("guest-help-modal-close-btn", "guest-help-modal");
   wireClose("guest-help-close-btn", "guest-help-modal");
   wireClose("confirm-cancel-btn", "confirm-modal");
-  wireClose("mobile-nav-close-btn", "mobile-nav-drawer");
 }
 
 export default {
