@@ -2,4 +2,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://daylign-22030.web.app/sitemap.xml
+Sitemap: https://daylign.pages.dev/sitemap.xml
